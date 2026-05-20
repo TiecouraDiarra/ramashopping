@@ -244,6 +244,10 @@ class _StatCardState extends State<_StatCard> {
   DateTime? _derniereCommande;
   bool _isLoading = true;
 
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
+
   @override
   void initState() {
     super.initState();
@@ -309,7 +313,7 @@ class _StatCardState extends State<_StatCard> {
                     children: [
                       _StatRow(title: 'Total commandes', value: '$_totalCommandes', color: AppColors.info),
                       const SizedBox(height: 8),
-                      _StatRow(title: 'Total dépensé', value: '${_totalDepense.toStringAsFixed(0)} FCFA', color: AppColors.success),
+                      _StatRow(title: 'Total dépensé', value: '${_formatNumber(_totalDepense)} FCFA', color: AppColors.success),
                       const SizedBox(height: 8),
                       _StatRow(title: 'Dernière commande', value: _derniereCommande != null ? DateFormat('dd/MM/yyyy').format(_derniereCommande!) : 'Jamais', color: AppColors.warning),
                     ],
@@ -348,6 +352,10 @@ class _CommandesClientCard extends StatelessWidget {
   final String clientId;
 
   const _CommandesClientCard({required this.clientId});
+
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
 
   @override
   Widget build(BuildContext context) {
@@ -448,7 +456,7 @@ class _CommandesClientCard extends StatelessWidget {
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                     trailing: Text(
-                      '${(data['montantTotal'] ?? 0).toStringAsFixed(0)} FCFA',
+                      '${_formatNumber(data['montantTotal'] ?? 0)} FCFA',
                       style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
                     ),
                   );

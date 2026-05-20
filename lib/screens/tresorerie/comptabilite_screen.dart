@@ -27,6 +27,9 @@ class _TresorerieScreenState extends State<TresorerieScreen> {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _fondsController = TextEditingController();
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
 
   @override
   void initState() {
@@ -273,7 +276,7 @@ class _TresorerieScreenState extends State<TresorerieScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text('Solde actuel', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              Text('${_soldeCaisse.toStringAsFixed(0)} FCFA', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                              Text('${_formatNumber(_soldeCaisse)} FCFA', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                             ],
                           ),
                         ],
@@ -361,7 +364,7 @@ class _TresorerieScreenState extends State<TresorerieScreen> {
                       children: [
                         const Icon(Icons.arrow_upward, color: AppColors.success, size: 24),
                         const Text('Entrées', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        Text('${_totalEntrees.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.success)),
+                        Text('${_formatNumber(_totalEntrees)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.success)),
                       ],
                     ),
                   ),
@@ -375,7 +378,7 @@ class _TresorerieScreenState extends State<TresorerieScreen> {
                       children: [
                         const Icon(Icons.arrow_downward, color: AppColors.error, size: 24),
                         const Text('Sorties', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        Text('${_totalSorties.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.error)),
+                        Text('${_formatNumber(_totalSorties)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.error)),
                       ],
                     ),
                   ),
@@ -461,6 +464,10 @@ class _TransactionCard extends StatelessWidget {
     }
   }
 
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
+
   @override
   Widget build(BuildContext context) {
     final isEntree = type == 'vente' || type == 'initial' || type == 'acompte';
@@ -492,7 +499,7 @@ class _TransactionCard extends StatelessWidget {
                 ],
               ),
             ),
-            Text('${isEntree ? '+' : '-'} ${montant.toStringAsFixed(0)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: couleur)),
+            Text('${isEntree ? '+' : '-'} ${_formatNumber(montant)} FCFA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: couleur)),
           ],
         ),
       ),

@@ -18,6 +18,10 @@ class _ListeProduitsState extends State<ListeProduits> {
   
   final CollectionReference _produits = FirebaseFirestore.instance.collection('produits');
 
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
+
   final List<String> _categories = [
     'Toutes',
     'Vêtements',
@@ -338,6 +342,10 @@ class _ProduitCard extends StatelessWidget {
     return 'En stock';
   }
 
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -472,7 +480,7 @@ class _ProduitCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     // Prix
                     Text(
-                      '${prix.toStringAsFixed(0)} FCFA',
+                      '${_formatNumber(prix)} FCFA',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

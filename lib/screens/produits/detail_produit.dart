@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../utils/theme.dart';
 
 class DetailProduitPage extends StatelessWidget {
   final String produitId;
@@ -12,18 +13,23 @@ class DetailProduitPage extends StatelessWidget {
     required this.produitData,
   });
 
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           produitData['nom'] ?? 'Produit',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF2E7D32),  // ← Vert comme les clients
+        backgroundColor: AppColors.primaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -37,15 +43,15 @@ class DetailProduitPage extends StatelessWidget {
       ),
       body: CustomScrollView(
         slivers: [
-          // En-tête avec image (dégradé vert)
+          // En-tête avec image (dégradé violet)
           SliverToBoxAdapter(
             child: Container(
               height: 300,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF43A047)],  // ← Dégradé vert
+                  colors: [AppColors.primaryPurple, AppColors.purpleDark],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
@@ -69,7 +75,7 @@ class DetailProduitPage extends StatelessWidget {
                           : null,
                     ),
                     child: produitData['imageUrl'] == null || produitData['imageUrl'].isEmpty
-                        ? const Icon(Icons.inventory_2, size: 60, color: Colors.white)
+                        ? Icon(Icons.inventory_2, size: 60, color: AppColors.white)
                         : null,
                   ),
                   const SizedBox(height: 16),
@@ -78,7 +84,7 @@ class DetailProduitPage extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -90,7 +96,7 @@ class DetailProduitPage extends StatelessWidget {
                     ),
                     child: Text(
                       produitData['categorie'] ?? 'Non catégorisé',
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: AppColors.white),
                     ),
                   ),
                 ],
@@ -107,7 +113,7 @@ class DetailProduitPage extends StatelessWidget {
                   // Prix et stock
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -126,15 +132,15 @@ class DetailProduitPage extends StatelessWidget {
                               children: [
                                 const Text(
                                   'Prix',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: TextStyle(color: AppColors.textSecondary),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${(produitData['prix'] ?? 0).toStringAsFixed(0)} FCFA',
+                                  '${_formatNumber(produitData['prix'] ?? 0)} FCFA',
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E7D32),  // ← Vert
+                                    color: AppColors.primaryPurple,
                                   ),
                                 ),
                               ],
@@ -143,14 +149,14 @@ class DetailProduitPage extends StatelessWidget {
                           Container(
                             width: 1,
                             height: 40,
-                            color: Colors.grey.shade200,
+                            color: AppColors.divider,
                           ),
                           Expanded(
                             child: Column(
                               children: [
                                 const Text(
                                   'Stock',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: TextStyle(color: AppColors.textSecondary),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
@@ -159,7 +165,7 @@ class DetailProduitPage extends StatelessWidget {
                                     Icon(
                                       (produitData['stock'] ?? 0) > 0 ? Icons.check_circle : Icons.warning,
                                       size: 16,
-                                      color: (produitData['stock'] ?? 0) > 0 ? Colors.green : Colors.red,
+                                      color: (produitData['stock'] ?? 0) > 0 ? AppColors.success : AppColors.error,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -167,7 +173,7 @@ class DetailProduitPage extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: (produitData['stock'] ?? 0) > 0 ? Colors.green : Colors.red,
+                                        color: (produitData['stock'] ?? 0) > 0 ? AppColors.success : AppColors.error,
                                       ),
                                     ),
                                   ],
@@ -184,7 +190,7 @@ class DetailProduitPage extends StatelessWidget {
                   // Description
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -200,7 +206,7 @@ class DetailProduitPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2E7D32).withOpacity(0.05),  // ← Vert clair
+                            color: AppColors.primaryPurple.withOpacity(0.05),
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(20),
                               topRight: Radius.circular(20),
@@ -211,10 +217,10 @@ class DetailProduitPage extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2E7D32),  // ← Vert
+                                  color: AppColors.primaryPurple,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.description, color: Colors.white, size: 20),
+                                child: const Icon(Icons.description, color: AppColors.white, size: 20),
                               ),
                               const SizedBox(width: 12),
                               const Text(
@@ -233,7 +239,7 @@ class DetailProduitPage extends StatelessWidget {
                             produitData['description'] ?? 'Aucune description disponible',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade700,
+                              color: AppColors.textPrimary,
                               height: 1.5,
                             ),
                           ),
@@ -246,7 +252,7 @@ class DetailProduitPage extends StatelessWidget {
                   // Informations complémentaires
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -262,7 +268,7 @@ class DetailProduitPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2196F3).withOpacity(0.05),  // ← Bleu pour différencier
+                            color: AppColors.secondaryYellow.withOpacity(0.05),
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(20),
                               topRight: Radius.circular(20),
@@ -273,10 +279,10 @@ class DetailProduitPage extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2196F3),  // ← Bleu
+                                  color: AppColors.secondaryYellow,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                                child: const Icon(Icons.info_outline, color: AppColors.white, size: 20),
                               ),
                               const SizedBox(width: 12),
                               const Text(
@@ -297,18 +303,18 @@ class DetailProduitPage extends StatelessWidget {
                                 label: 'Code barre',
                                 value: produitData['codeBarre'] ?? 'Non renseigné',
                               ),
-                              const Divider(),
+                              const Divider(color: AppColors.divider),
                               _InfoRow(
                                 label: 'Date d\'ajout',
                                 value: DateFormat('dd/MM/yyyy HH:mm').format(
                                   (produitData['dateCreation'] as Timestamp?)?.toDate() ?? DateTime.now(),
                                 ),
                               ),
-                              const Divider(),
+                              const Divider(color: AppColors.divider),
                               _InfoRow(
                                 label: 'Statut',
                                 value: (produitData['stock'] ?? 0) > 0 ? 'En stock' : 'Rupture',
-                                valueColor: (produitData['stock'] ?? 0) > 0 ? Colors.green : Colors.red,
+                                valueColor: (produitData['stock'] ?? 0) > 0 ? AppColors.success : AppColors.error,
                               ),
                             ],
                           ),
@@ -325,9 +331,12 @@ class DetailProduitPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {},
-        backgroundColor: const Color(0xFF2E7D32),  // ← Vert
-        icon: const Icon(Icons.add_shopping_cart),
-        label: const Text('Ajouter au panier'),
+        backgroundColor: AppColors.secondaryYellow,
+        icon: Icon(Icons.add_shopping_cart, color: AppColors.primaryPurple),
+        label: Text(
+          'Ajouter au panier',
+          style: TextStyle(color: AppColors.primaryPurple),
+        ),
       ),
     );
   }
@@ -351,13 +360,13 @@ class _InfoRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(color: Colors.grey.shade600),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         Text(
           value,
           style: TextStyle(
             fontWeight: FontWeight.w500,
-            color: valueColor ?? Colors.grey.shade800,
+            color: valueColor ?? AppColors.textPrimary,
           ),
         ),
       ],

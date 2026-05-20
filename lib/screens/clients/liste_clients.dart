@@ -17,6 +17,10 @@ class _ListeClientsState extends State<ListeClients> {
 
   final CollectionReference _clients = FirebaseFirestore.instance.collection('clients');
 
+  String _formatNumber(double number) {
+  return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+}
+
   @override
   void initState() {
     super.initState();

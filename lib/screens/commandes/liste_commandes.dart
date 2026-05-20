@@ -26,6 +26,10 @@ class _ListeCommandesState extends State<ListeCommandes> {
     'Annulée',
   ];
 
+  String _formatNumber(double number) {
+    return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+  }
+
   final CollectionReference _commandes = FirebaseFirestore.instance.collection('commandes');
 
   @override
@@ -391,6 +395,10 @@ class _CommandeCard extends StatelessWidget {
     }
   }
 
+  String _formatNumber(double number) {
+    return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+  }
+
   Color _getStatutCouleur() {
     switch (statut) {
       case 'enAttente': return AppColors.warning;
@@ -555,7 +563,7 @@ class _CommandeCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    '${montantTotal.toStringAsFixed(0)} FCFA',
+                    '${_formatNumber(montantTotal)} FCFA',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -582,7 +590,7 @@ class _CommandeCard extends StatelessWidget {
                         children: [
                           const Text('Payé:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                           Text(
-                            '${montantPaye.toStringAsFixed(0)} FCFA',
+                            '${_formatNumber(montantPaye)} FCFA',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.success),
                           ),
                         ],
@@ -593,7 +601,7 @@ class _CommandeCard extends StatelessWidget {
                         children: [
                           const Text('Reste:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                           Text(
-                            '${montantRestant.toStringAsFixed(0)} FCFA',
+                            '${_formatNumber(montantRestant)} FCFA',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,

@@ -127,14 +127,29 @@ class _DashboardHomeState extends State<DashboardHome> {
     setState(() => _isLoading = true);
 
     try {
-      final caisseDoc = await _firestore.collection('caisse').doc('principale').get();
+      final caisseDoc = await _firestore
+          .collection('caisse')
+          .doc('principale')
+          .get();
       if (caisseDoc.exists) {
-        _soldeCaisse = (caisseDoc.data() as Map<String, dynamic>)['soldeActuel'] ?? 0;
+        _soldeCaisse =
+            (caisseDoc.data() as Map<String, dynamic>)['soldeActuel'] ?? 0;
       }
 
       final aujourdhui = DateTime.now();
-      final debutJour = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day);
-      final finJour = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day, 23, 59, 59);
+      final debutJour = DateTime(
+        aujourdhui.year,
+        aujourdhui.month,
+        aujourdhui.day,
+      );
+      final finJour = DateTime(
+        aujourdhui.year,
+        aujourdhui.month,
+        aujourdhui.day,
+        23,
+        59,
+        59,
+      );
 
       final ventesSnapshot = await _firestore
           .collection('transactions')
@@ -143,8 +158,10 @@ class _DashboardHomeState extends State<DashboardHome> {
 
       _caAujourdhui = ventesSnapshot.docs.fold<double>(0, (sum, doc) {
         final data = doc.data() as Map<String, dynamic>;
-        final dateTransaction = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
-        if (dateTransaction.isAfter(debutJour) && dateTransaction.isBefore(finJour)) {
+        final dateTransaction =
+            (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+        if (dateTransaction.isAfter(debutJour) &&
+            dateTransaction.isBefore(finJour)) {
           return sum + (data['montant'] ?? 0);
         }
         return sum;
@@ -195,13 +212,19 @@ class _DashboardHomeState extends State<DashboardHome> {
     }
   }
 
+  String _formatNumber(double number) {
+    return NumberFormat('#,###').format(number).replaceAll(',', ' ');
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: Container(
@@ -235,12 +258,20 @@ class _DashboardHomeState extends State<DashboardHome> {
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.logout, color: Colors.white, size: 32),
+                        child: const Icon(
+                          Icons.logout,
+                          color: Colors.white,
+                          size: 32,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         'Déconnexion',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ),
@@ -250,7 +281,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                   child: Text(
                     'Êtes-vous sûr de vouloir vous déconnecter ?',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
                 Padding(
@@ -262,10 +296,15 @@ class _DashboardHomeState extends State<DashboardHome> {
                           onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: AppColors.divider),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: Text('Annuler', style: TextStyle(color: AppColors.textSecondary)),
+                          child: Text(
+                            'Annuler',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -277,16 +316,23 @@ class _DashboardHomeState extends State<DashboardHome> {
                             if (mounted) {
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
+                                ),
                               );
                             }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.error,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: const Text('Déconnecter', style: TextStyle(color: Colors.white)),
+                          child: const Text(
+                            'Déconnecter',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -346,7 +392,11 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   width: 30,
                                   fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.shopping_bag, color: Colors.white, size: 24);
+                                    return const Icon(
+                                      Icons.shopping_bag,
+                                      color: Colors.white,
+                                      size: 24,
+                                    );
                                   },
                                 ),
                               ),
@@ -357,11 +407,18 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   children: [
                                     Text(
                                       'Rama Shopping',
-                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                     Text(
                                       user?.email ?? 'Administrateur',
-                                      style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8)),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white.withOpacity(0.8),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -373,7 +430,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.logout, color: Colors.white),
+                                  icon: const Icon(
+                                    Icons.logout,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: () => _showLogoutDialog(context),
                                 ),
                               ),
@@ -382,12 +442,19 @@ class _DashboardHomeState extends State<DashboardHome> {
                           const SizedBox(height: 20),
                           Text(
                             '$_greeting 👋',
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Voici ce qui se passe aujourd\'hui',
-                            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
                           ),
                         ],
                       ),
@@ -406,7 +473,9 @@ class _DashboardHomeState extends State<DashboardHome> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(color: AppColors.secondaryYellow),
+                        child: CircularProgressIndicator(
+                          color: AppColors.secondaryYellow,
+                        ),
                       ),
                     )
                   else ...[
@@ -416,7 +485,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                         Expanded(
                           child: _StatCard(
                             title: 'Solde caisse',
-                            value: '${_soldeCaisse.toStringAsFixed(0)} FCFA',
+                            value: '${_formatNumber(_soldeCaisse)} FCFA',
                             icon: Icons.account_balance_wallet,
                             color: AppColors.success,
                           ),
@@ -425,7 +494,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                         Expanded(
                           child: _StatCard(
                             title: 'CA aujourd\'hui',
-                            value: '${_caAujourdhui.toStringAsFixed(0)} FCFA',
+                            value: '${_formatNumber(_caAujourdhui)} FCFA',
                             icon: Icons.trending_up,
                             color: AppColors.info,
                           ),
@@ -491,7 +560,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                           children: [
                             const Text(
                               'Actions rapides',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Row(
@@ -502,7 +574,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                                     label: 'Commande',
                                     color: AppColors.success,
                                     onTap: () {
-                                      final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
+                                      final bottomNavBar = context
+                                          .findAncestorStateOfType<
+                                            _DashboardScreenState
+                                          >();
                                       if (bottomNavBar != null) {
                                         bottomNavBar.setState(() {
                                           bottomNavBar._selectedIndex = 1;
@@ -518,7 +593,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                                     label: 'Encaissement',
                                     color: AppColors.secondaryYellow,
                                     onTap: () {
-                                      final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
+                                      final bottomNavBar = context
+                                          .findAncestorStateOfType<
+                                            _DashboardScreenState
+                                          >();
                                       if (bottomNavBar != null) {
                                         bottomNavBar.setState(() {
                                           bottomNavBar._selectedIndex = 2;
@@ -534,7 +612,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                                     label: 'Client',
                                     color: AppColors.primaryPurple,
                                     onTap: () {
-                                      final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
+                                      final bottomNavBar = context
+                                          .findAncestorStateOfType<
+                                            _DashboardScreenState
+                                          >();
                                       if (bottomNavBar != null) {
                                         bottomNavBar.setState(() {
                                           bottomNavBar._selectedIndex = 3;
@@ -578,22 +659,35 @@ class _DashboardHomeState extends State<DashboardHome> {
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
-                                          colors: [AppColors.primaryPurple, AppColors.purpleLight],
+                                          colors: [
+                                            AppColors.primaryPurple,
+                                            AppColors.purpleLight,
+                                          ],
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: const Icon(Icons.history, color: Colors.white, size: 18),
+                                      child: const Icon(
+                                        Icons.history,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
                                     ),
                                     const SizedBox(width: 12),
                                     const Text(
                                       'Dernières commandes',
-                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ],
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
+                                    final bottomNavBar = context
+                                        .findAncestorStateOfType<
+                                          _DashboardScreenState
+                                        >();
                                     if (bottomNavBar != null) {
                                       bottomNavBar.setState(() {
                                         bottomNavBar._selectedIndex = 1;
@@ -601,19 +695,31 @@ class _DashboardHomeState extends State<DashboardHome> {
                                     }
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryPurple.withOpacity(0.1),
+                                      color: AppColors.primaryPurple
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Row(
                                       children: [
                                         Text(
                                           'Voir tout',
-                                          style: TextStyle(color: AppColors.primaryPurple, fontSize: 12, fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                            color: AppColors.primaryPurple,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                         const SizedBox(width: 4),
-                                        Icon(Icons.arrow_forward_ios, color: AppColors.primaryPurple, size: 10),
+                                        Icon(
+                                          Icons.arrow_forward_ios,
+                                          color: AppColors.primaryPurple,
+                                          size: 10,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -625,7 +731,9 @@ class _DashboardHomeState extends State<DashboardHome> {
                           if (_dernieresCommandes.isEmpty)
                             const Padding(
                               padding: EdgeInsets.all(32),
-                              child: Center(child: Text('Aucune commande pour le moment')),
+                              child: Center(
+                                child: Text('Aucune commande pour le moment'),
+                              ),
                             )
                           else
                             ListView.separated(
@@ -633,18 +741,27 @@ class _DashboardHomeState extends State<DashboardHome> {
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _dernieresCommandes.length,
                               separatorBuilder: (context, index) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                child: Divider(height: 1, color: AppColors.divider),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Divider(
+                                  height: 1,
+                                  color: AppColors.divider,
+                                ),
                               ),
                               itemBuilder: (context, index) {
                                 final commande = _dernieresCommandes[index];
-                                final montantPaye = commande['montantPaye'] ?? 0.0;
-                                final montantRestant = commande['montant'] - montantPaye;
+                                final montantPaye =
+                                    commande['montantPaye'] ?? 0.0;
+                                final montantRestant =
+                                    commande['montant'] - montantPaye;
                                 return _DashboardCommandeTile(
                                   id: commande['id'],
                                   numero: commande['numero'],
                                   client: commande['client'],
-                                  date: DateFormat('dd/MM/yyyy HH:mm').format(commande['date']),
+                                  date: DateFormat(
+                                    'dd/MM/yyyy HH:mm',
+                                  ).format(commande['date']),
                                   montantTotal: commande['montant'],
                                   montantPaye: montantPaye,
                                   montantRestant: montantRestant,
@@ -691,40 +808,64 @@ class _DashboardCommandeTile extends StatelessWidget {
 
   String _getStatutTexte() {
     switch (statut) {
-      case 'enAttente': return 'En attente';
-      case 'partiellementPayee': return 'Partiellement payée';
-      case 'payee': return 'Payée';
-      case 'livree': return 'Livrée';
-      case 'annulee': return 'Annulée';
-      default: return 'En attente';
+      case 'enAttente':
+        return 'En attente';
+      case 'partiellementPayee':
+        return 'Partiellement payée';
+      case 'payee':
+        return 'Payée';
+      case 'livree':
+        return 'Livrée';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return 'En attente';
     }
+  }
+
+  String _formatNumber(double number) {
+    return NumberFormat('#,###').format(number).replaceAll(',', ' ');
   }
 
   Color _getStatutCouleur() {
     switch (statut) {
-      case 'enAttente': return AppColors.warning;
-      case 'partiellementPayee': return AppColors.warning;
-      case 'payee': return AppColors.success;
-      case 'livree': return AppColors.info;
-      case 'annulee': return AppColors.error;
-      default: return AppColors.warning;
+      case 'enAttente':
+        return AppColors.warning;
+      case 'partiellementPayee':
+        return AppColors.warning;
+      case 'payee':
+        return AppColors.success;
+      case 'livree':
+        return AppColors.info;
+      case 'annulee':
+        return AppColors.error;
+      default:
+        return AppColors.warning;
     }
   }
 
   IconData _getStatutIcone() {
     switch (statut) {
-      case 'enAttente': return Icons.pending_actions;
-      case 'partiellementPayee': return Icons.payment;
-      case 'payee': return Icons.check_circle;
-      case 'livree': return Icons.local_shipping;
-      case 'annulee': return Icons.cancel;
-      default: return Icons.pending_actions;
+      case 'enAttente':
+        return Icons.pending_actions;
+      case 'partiellementPayee':
+        return Icons.payment;
+      case 'payee':
+        return Icons.check_circle;
+      case 'livree':
+        return Icons.local_shipping;
+      case 'annulee':
+        return Icons.cancel;
+      default:
+        return Icons.pending_actions;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final pourcentage = montantTotal > 0 ? (montantPaye / montantTotal) * 100 : 0;
+    final pourcentage = montantTotal > 0
+        ? (montantPaye / montantTotal) * 100
+        : 0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -780,23 +921,36 @@ class _DashboardCommandeTile extends StatelessWidget {
                       children: [
                         Text(
                           numero,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           client,
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Row(
                           children: [
-                            Icon(Icons.access_time, size: 10, color: AppColors.textHint),
+                            Icon(
+                              Icons.access_time,
+                              size: 10,
+                              color: AppColors.textHint,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               date,
-                              style: TextStyle(fontSize: 10, color: AppColors.textHint),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textHint,
+                              ),
                             ),
                           ],
                         ),
@@ -807,7 +961,7 @@ class _DashboardCommandeTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${montantTotal.toStringAsFixed(0)} FCFA',
+                        '${_formatNumber(montantTotal)} FCFA',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -816,7 +970,10 @@ class _DashboardCommandeTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: _getStatutCouleur().withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -841,17 +998,29 @@ class _DashboardCommandeTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.warning.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.warning.withOpacity(0.2)),
+                    border: Border.all(
+                      color: AppColors.warning.withOpacity(0.2),
+                    ),
                   ),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Payé:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          const Text(
+                            'Payé:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           Text(
-                            '${montantPaye.toStringAsFixed(0)} FCFA',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.success),
+                            '${_formatNumber(montantPaye)} FCFA',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.success,
+                            ),
                           ),
                         ],
                       ),
@@ -859,13 +1028,21 @@ class _DashboardCommandeTile extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Reste:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          const Text(
+                            'Reste:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           Text(
-                            '${montantRestant.toStringAsFixed(0)} FCFA',
+                            '${_formatNumber(montantRestant)} FCFA',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
-                              color: montantRestant > 0 ? AppColors.error : AppColors.success,
+                              color: montantRestant > 0
+                                  ? AppColors.error
+                                  : AppColors.success,
                             ),
                           ),
                         ],
