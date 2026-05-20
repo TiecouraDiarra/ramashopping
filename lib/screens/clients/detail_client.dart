@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../utils/theme.dart';
 
 class DetailClientPage extends StatelessWidget {
   final String clientId;
@@ -15,38 +16,32 @@ class DetailClientPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           '${clientData['prenom']} ${clientData['nom']}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: AppColors.primaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.edit), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.delete), onPressed: () {}),
         ],
       ),
       body: CustomScrollView(
         slivers: [
-          // En-tête avec photo
+          // En-tête avec gradient violet
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF43A047)],
+                  colors: [AppColors.primaryPurple, AppColors.purpleDark],
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
                 ),
@@ -60,11 +55,7 @@ class DetailClientPage extends StatelessWidget {
                       color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 60,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.person, size: 60, color: Colors.white),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -157,14 +148,10 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -173,38 +160,24 @@ class _InfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              color: AppColors.primaryPurple.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: AppColors.primaryPurple, borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
+            child: Column(children: children),
           ),
         ],
       ),
@@ -231,25 +204,16 @@ class _InfoRow extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: Colors.grey.shade600),
+            decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 18, color: AppColors.textSecondary),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
+                Text(label, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -310,14 +274,10 @@ class _StatCardState extends State<_StatCard> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -326,58 +286,32 @@ class _StatCardState extends State<_StatCard> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF2196F3).withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              color: AppColors.secondaryYellow.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: AppColors.secondaryYellow, borderRadius: BorderRadius.circular(12)),
                   child: Icon(widget.icon, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple))
                 : Column(
                     children: [
-                      _StatRow(
-                        title: 'Total commandes',
-                        value: '$_totalCommandes',
-                        color: Colors.blue,
-                      ),
+                      _StatRow(title: 'Total commandes', value: '$_totalCommandes', color: AppColors.info),
                       const SizedBox(height: 8),
-                      _StatRow(
-                        title: 'Total dépensé',
-                        value: '${_totalDepense.toStringAsFixed(0)} FCFA',
-                        color: Colors.green,
-                      ),
+                      _StatRow(title: 'Total dépensé', value: '${_totalDepense.toStringAsFixed(0)} FCFA', color: AppColors.success),
                       const SizedBox(height: 8),
-                      _StatRow(
-                        title: 'Dernière commande',
-                        value: _derniereCommande != null
-                            ? DateFormat('dd/MM/yyyy').format(_derniereCommande!)
-                            : 'Jamais',
-                        color: Colors.orange,
-                      ),
+                      _StatRow(title: 'Dernière commande', value: _derniereCommande != null ? DateFormat('dd/MM/yyyy').format(_derniereCommande!) : 'Jamais', color: AppColors.warning),
                     ],
                   ),
           ),
@@ -403,17 +337,8 @@ class _StatRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: TextStyle(color: Colors.grey.shade600),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
+        Text(title, style: TextStyle(color: AppColors.textSecondary)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
       ],
     );
   }
@@ -428,14 +353,10 @@ class _CommandesClientCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -444,11 +365,8 @@ class _CommandesClientCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9800).withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              color: AppColors.warning.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -457,25 +375,16 @@ class _CommandesClientCard extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9800),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      decoration: BoxDecoration(color: AppColors.warning, borderRadius: BorderRadius.circular(12)),
                       child: const Icon(Icons.history, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Dernières commandes',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    const Text('Dernières commandes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('Voir tout'),
+                  child: Text('Voir tout', style: TextStyle(color: AppColors.primaryPurple)),
                 ),
               ],
             ),
@@ -485,34 +394,29 @@ class _CommandesClientCard extends StatelessWidget {
             stream: FirebaseFirestore.instance
                 .collection('commandes')
                 .where('clientId', isEqualTo: clientId)
-                .snapshots(), // ← Pas de orderBy ici
+                .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
                   padding: EdgeInsets.all(20),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
                 );
               }
 
               if (snapshot.hasError) {
                 return Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: Text('Erreur: ${snapshot.error}'),
-                  ),
+                  child: Center(child: Text('Erreur: ${snapshot.error}', style: TextStyle(color: AppColors.error))),
                 );
               }
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(20),
-                  child: Center(
-                    child: Text('Aucune commande pour ce client'),
-                  ),
+                  child: Center(child: Text('Aucune commande pour ce client', style: TextStyle(color: AppColors.textSecondary))),
                 );
               }
 
-              // Trier côté client
               var commandes = snapshot.data!.docs.toList();
               commandes.sort((a, b) {
                 final dateA = (a.data() as Map<String, dynamic>)['date'] as Timestamp?;
@@ -523,34 +427,29 @@ class _CommandesClientCard extends StatelessWidget {
                 return dateB.compareTo(dateA);
               });
               
-              // Limiter à 3
               commandes = commandes.take(3).toList();
 
               return ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: commandes.length,
-                separatorBuilder: (context, index) => const Divider(),
+                separatorBuilder: (context, index) => Divider(color: AppColors.divider),
                 itemBuilder: (context, index) {
                   final doc = commandes[index];
                   final data = doc.data() as Map<String, dynamic>;
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF2E7D32).withOpacity(0.1),
-                      child: const Icon(Icons.receipt, color: Color(0xFF2E7D32)),
+                      backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
+                      child: Icon(Icons.receipt, color: AppColors.primaryPurple),
                     ),
-                    title: Text(data['numero'] ?? 'N/A'),
+                    title: Text(data['numero'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(
-                      DateFormat('dd/MM/yyyy HH:mm').format(
-                        (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
-                      ),
+                      DateFormat('dd/MM/yyyy HH:mm').format((data['date'] as Timestamp?)?.toDate() ?? DateTime.now()),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                     trailing: Text(
                       '${(data['montantTotal'] ?? 0).toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32),
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryPurple),
                     ),
                   );
                 },
