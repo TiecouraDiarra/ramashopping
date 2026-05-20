@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rama_shopping_app/screens/clients/detail_client.dart';
+import '../../utils/theme.dart';
 
 class ListeClients extends StatefulWidget {
   const ListeClients({super.key});
@@ -14,9 +15,7 @@ class _ListeClientsState extends State<ListeClients> {
   String _recherche = '';
   final TextEditingController _searchController = TextEditingController();
 
-  final CollectionReference _clients = FirebaseFirestore.instance.collection(
-    'clients',
-  );
+  final CollectionReference _clients = FirebaseFirestore.instance.collection('clients');
 
   @override
   void initState() {
@@ -41,10 +40,7 @@ class _ListeClientsState extends State<ListeClients> {
     );
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Client ajouté avec succès'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Client ajouté avec succès'), backgroundColor: AppColors.success),
       );
     }
   }
@@ -53,16 +49,12 @@ class _ListeClientsState extends State<ListeClients> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ClientFormPage(client: client, clientId: client['id']),
+        builder: (context) => ClientFormPage(client: client, clientId: client['id']),
       ),
     );
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Client modifié avec succès'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Client modifié avec succès'), backgroundColor: AppColors.success),
       );
     }
   }
@@ -75,30 +67,16 @@ class _ListeClientsState extends State<ListeClients> {
         title: const Text('Supprimer le client'),
         content: Text('Voulez-vous vraiment supprimer $nom ?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text(
-              'Supprimer',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: AppColors.error), child: const Text('Supprimer', style: TextStyle(color: Colors.white))),
         ],
       ),
     );
-
     if (confirm == true) {
       await _clients.doc(id).delete();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Client supprimé'),
-            backgroundColor: Colors.orange,
-          ),
+          const SnackBar(content: Text('Client supprimé'), backgroundColor: AppColors.warning),
         );
       }
     }
@@ -107,77 +85,48 @@ class _ListeClientsState extends State<ListeClients> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // En-tête avec recherche
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
               ],
             ),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Rechercher un client...',
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Colors.grey.shade500,
-                            ),
-                            suffixIcon: _recherche.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.clear,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                    onPressed: () => _searchController.clear(),
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(16)),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un client...',
+                        prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                        suffixIcon: _recherche.isNotEmpty
+                            ? IconButton(icon: Icon(Icons.clear, color: AppColors.textSecondary), onPressed: () => _searchController.clear())
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: _ajouterClient,
-                        icon: const Icon(Icons.add, color: Colors.white),
-                      ),
-                    ),
-                  ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [AppColors.primaryPurple, AppColors.purpleLight]),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(onPressed: _ajouterClient, icon: const Icon(Icons.add, color: Colors.white)),
                 ),
               ],
             ),
           ),
 
-          // Liste des clients
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _clients.orderBy('nom').snapshots(),
@@ -187,11 +136,7 @@ class _ListeClientsState extends State<ListeClients> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red.shade300,
-                        ),
+                        Icon(Icons.error_outline, size: 64, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text('Erreur: ${snapshot.error}'),
                       ],
@@ -200,9 +145,7 @@ class _ListeClientsState extends State<ListeClients> {
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-                  );
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -210,32 +153,17 @@ class _ListeClientsState extends State<ListeClients> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 80,
-                          color: Colors.grey.shade300,
-                        ),
+                        Icon(Icons.people_outline, size: 80, color: AppColors.textHint),
                         const SizedBox(height: 16),
-                        Text(
-                          'Aucun client',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Text('Aucun client', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: _ajouterClient,
                           icon: const Icon(Icons.add),
-                          label: const Text(
-                            'Ajouter un client',
-                            style: TextStyle(color: Colors.white),
-                          ),
+                          label: const Text('Ajouter un client', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7D32),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            backgroundColor: AppColors.primaryPurple,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       ],
@@ -250,8 +178,8 @@ class _ListeClientsState extends State<ListeClients> {
                   final telephone = data['telephone'] ?? '';
                   final rechercheLower = _recherche.toLowerCase();
                   return nom.toLowerCase().contains(rechercheLower) ||
-                      prenom.toLowerCase().contains(rechercheLower) ||
-                      telephone.contains(rechercheLower);
+                         prenom.toLowerCase().contains(rechercheLower) ||
+                         telephone.contains(rechercheLower);
                 }).toList();
 
                 if (clients.isEmpty) {
@@ -259,16 +187,9 @@ class _ListeClientsState extends State<ListeClients> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 80,
-                          color: Colors.grey.shade300,
-                        ),
+                        Icon(Icons.search_off, size: 80, color: AppColors.textHint),
                         const SizedBox(height: 16),
-                        Text(
-                          'Aucun résultat pour "$_recherche"',
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
+                        Text('Aucun résultat pour "$_recherche"', style: TextStyle(color: AppColors.textSecondary)),
                       ],
                     ),
                   );
@@ -288,10 +209,7 @@ class _ListeClientsState extends State<ListeClients> {
                       email: data['email'] ?? '',
                       adresse: data['adresse'] ?? '',
                       onEdit: () => _modifierClient({...data, 'id': doc.id}),
-                      onDelete: () => _supprimerClient(
-                        doc.id,
-                        '${data['prenom']} ${data['nom']}',
-                      ),
+                      onDelete: () => _supprimerClient(doc.id, '${data['prenom']} ${data['nom']}'),
                     );
                   },
                 );
@@ -304,7 +222,6 @@ class _ListeClientsState extends State<ListeClients> {
   }
 }
 
-// Carte client
 class _ClientCard extends StatelessWidget {
   final String id;
   final String nom;
@@ -333,11 +250,10 @@ class _ClientCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.shade100, width: 1),
+        side: BorderSide(color: AppColors.divider, width: 1),
       ),
       child: InkWell(
         onTap: () {
-          // Navigation vers le détail client
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -366,64 +282,32 @@ class _ClientCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                      ),
+                      gradient: LinearGradient(colors: [AppColors.primaryPurple, AppColors.purpleLight]),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                    child: const Icon(Icons.person, color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '$prenom $nom',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Text('$prenom $nom', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.phone,
-                              size: 14,
-                              color: Colors.grey.shade500,
-                            ),
+                            Icon(Icons.phone, size: 14, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
-                            Text(
-                              telephone,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
+                            Text(telephone, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                           ],
                         ),
                         if (email.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(
-                                Icons.email,
-                                size: 14,
-                                color: Colors.grey.shade500,
-                              ),
+                              Icon(Icons.email, size: 14, color: AppColors.textSecondary),
                               const SizedBox(width: 4),
-                              Text(
-                                email,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
+                              Text(email, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                             ],
                           ),
                         ],
@@ -431,35 +315,14 @@ class _ClientCard extends StatelessWidget {
                     ),
                   ),
                   PopupMenuButton(
-                    icon: Icon(Icons.more_vert, color: Colors.grey.shade600),
+                    icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
                     onSelected: (value) {
-                      if (value == 'edit') {
-                        onEdit();
-                      } else if (value == 'delete') {
-                        onDelete();
-                      }
+                      if (value == 'edit') onEdit();
+                      else if (value == 'delete') onDelete();
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 20, color: Colors.blue),
-                            SizedBox(width: 8),
-                            Text('Modifier'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Supprimer'),
-                          ],
-                        ),
-                      ),
+                      const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Modifier')])),
+                      const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Supprimer')])),
                     ],
                   ),
                 ],
@@ -468,27 +331,12 @@ class _ClientCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: Colors.grey.shade500,
-                      ),
+                      Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          adresse,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
+                      Expanded(child: Text(adresse, style: TextStyle(fontSize: 12, color: AppColors.textSecondary))),
                     ],
                   ),
                 ),
@@ -501,11 +349,9 @@ class _ClientCard extends StatelessWidget {
   }
 }
 
-// Formulaire client premium
 class ClientFormPage extends StatefulWidget {
   final Map<String, dynamic>? client;
   final String? clientId;
-
   const ClientFormPage({super.key, this.client, this.clientId});
 
   @override
@@ -521,8 +367,6 @@ class _ClientFormPageState extends State<ClientFormPage> {
   final _adresseController = TextEditingController();
 
   bool _isLoading = false;
-  int _currentStep = 0;
-
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -549,9 +393,7 @@ class _ClientFormPageState extends State<ClientFormPage> {
 
   Future<void> _enregistrer() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
-
     try {
       final data = {
         'nom': _nomController.text.trim(),
@@ -561,23 +403,14 @@ class _ClientFormPageState extends State<ClientFormPage> {
         'adresse': _adresseController.text.trim(),
         'dateCreation': Timestamp.now(),
       };
-
       if (widget.clientId != null) {
-        await _firestore
-            .collection('clients')
-            .doc(widget.clientId)
-            .update(data);
+        await _firestore.collection('clients').doc(widget.clientId).update(data);
       } else {
         await _firestore.collection('clients').add(data);
       }
-
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -586,31 +419,19 @@ class _ClientFormPageState extends State<ClientFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.clientId != null;
-
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // AppBar avec gradient
           SliverAppBar(
             expandedHeight: 180,
             pinned: true,
-            backgroundColor: const Color(0xFF2E7D32),
+            backgroundColor: AppColors.primaryPurple,
             foregroundColor: Colors.white,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1B5E20),
-                      Color(0xFF2E7D32),
-                      Color(0xFF43A047),
-                    ],
-                  ),
-                ),
+                decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.primaryPurple, AppColors.purpleDark])),
                 child: SafeArea(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -618,43 +439,19 @@ class _ClientFormPageState extends State<ClientFormPage> {
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isEditing ? Icons.edit : Icons.person_add,
-                          size: 50,
-                          color: Colors.white,
-                        ),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                        child: Icon(isEditing ? Icons.edit : Icons.person_add, size: 50, color: Colors.white),
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        isEditing ? 'Modifier le client' : 'Nouveau client',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      Text(isEditing ? 'Modifier le client' : 'Nouveau client', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 4),
-                      Text(
-                        isEditing
-                            ? 'Modifiez les informations'
-                            : 'Ajoutez un nouveau client',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
+                      Text(isEditing ? 'Modifiez les informations' : 'Ajoutez un nouveau client', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8))),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-
-          // Formulaire
           SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
@@ -663,144 +460,51 @@ class _ClientFormPageState extends State<ClientFormPage> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Étape 1: Informations personnelles
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2))]),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // En-tête
                             Container(
                               padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E7D32,
-                                ).withOpacity(0.05),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(24),
-                                  topRight: Radius.circular(24),
-                                ),
-                              ),
+                              decoration: BoxDecoration(color: AppColors.primaryPurple.withOpacity(0.05), borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24))),
                               child: Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2E7D32),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.person_outline,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
+                                  Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.primaryPurple, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.person_outline, color: Colors.white, size: 20)),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'Informations personnelles',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  const Text('Informations personnelles', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
-
                             Padding(
                               padding: const EdgeInsets.all(20),
                               child: Column(
                                 children: [
-                                  // Nom et Prénom en ligne
                                   Row(
                                     children: [
                                       Expanded(
                                         child: TextFormField(
                                           controller: _nomController,
-                                          decoration: InputDecoration(
-                                            labelText: 'Nom *',
-                                            hintText: 'Diarra',
-                                            prefixIcon: const Icon(
-                                              Icons.badge_outlined,
-                                            ),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            filled: true,
-                                            fillColor: Colors.grey.shade50,
-                                          ),
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return 'Nom requis';
-                                            }
-                                            return null;
-                                          },
+                                          decoration: InputDecoration(labelText: 'Nom *', hintText: 'Diarra', prefixIcon: const Icon(Icons.badge_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), filled: true, fillColor: AppColors.background),
+                                          validator: (value) => (value == null || value.isEmpty) ? 'Nom requis' : null,
                                         ),
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: TextFormField(
                                           controller: _prenomController,
-                                          decoration: InputDecoration(
-                                            labelText: 'Prénom *',
-                                            hintText: 'Tiecoura',
-                                            prefixIcon: const Icon(
-                                              Icons.person_outline,
-                                            ),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            filled: true,
-                                            fillColor: Colors.grey.shade50,
-                                          ),
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return 'Prénom requis';
-                                            }
-                                            return null;
-                                          },
+                                          decoration: InputDecoration(labelText: 'Prénom *', hintText: 'Tiecoura', prefixIcon: const Icon(Icons.person_outline), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), filled: true, fillColor: AppColors.background),
+                                          validator: (value) => (value == null || value.isEmpty) ? 'Prénom requis' : null,
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 20),
-
-                                  // Téléphone
                                   TextFormField(
                                     controller: _telephoneController,
                                     keyboardType: TextInputType.phone,
-                                    decoration: InputDecoration(
-                                      labelText: 'Téléphone *',
-                                      hintText: '+223 00 00 00 00',
-                                      prefixIcon: const Icon(
-                                        Icons.phone_outlined,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Téléphone requis';
-                                      }
-                                      return null;
-                                    },
+                                    decoration: InputDecoration(labelText: 'Téléphone *', hintText: '+223 00 00 00 00', prefixIcon: const Icon(Icons.phone_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), filled: true, fillColor: AppColors.background),
+                                    validator: (value) => (value == null || value.isEmpty) ? 'Téléphone requis' : null,
                                   ),
                                 ],
                               ),
@@ -808,101 +512,37 @@ class _ClientFormPageState extends State<ClientFormPage> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Étape 2: Contact
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                        decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2))]),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
                               padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2196F3,
-                                ).withOpacity(0.05),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(24),
-                                  topRight: Radius.circular(24),
-                                ),
-                              ),
+                              decoration: BoxDecoration(color: AppColors.secondaryYellow.withOpacity(0.05), borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24))),
                               child: Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2196F3),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.contact_mail_outlined,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
+                                  Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.secondaryYellow, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.contact_mail_outlined, color: Colors.white, size: 20)),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'Coordonnées',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  const Text('Coordonnées', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
-
                             Padding(
                               padding: const EdgeInsets.all(20),
                               child: Column(
                                 children: [
-                                  // Email
                                   TextFormField(
                                     controller: _emailController,
                                     keyboardType: TextInputType.emailAddress,
-                                    decoration: InputDecoration(
-                                      labelText: 'Email',
-                                      hintText: 'diarra.tiecoura@email.com',
-                                      prefixIcon: const Icon(
-                                        Icons.email_outlined,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
-                                    ),
+                                    decoration: InputDecoration(labelText: 'Email', hintText: 'diarra.tiecoura@email.com', prefixIcon: const Icon(Icons.email_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), filled: true, fillColor: AppColors.background),
                                   ),
                                   const SizedBox(height: 20),
-
-                                  // Adresse
                                   TextFormField(
                                     controller: _adresseController,
                                     maxLines: 3,
-                                    decoration: InputDecoration(
-                                      labelText: 'Adresse',
-                                      hintText: 'Votre adresse complète',
-                                      prefixIcon: const Icon(
-                                        Icons.location_on_outlined,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.grey.shade50,
-                                    ),
+                                    decoration: InputDecoration(labelText: 'Adresse', hintText: 'Votre adresse complète', prefixIcon: const Icon(Icons.location_on_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), filled: true, fillColor: AppColors.background),
                                   ),
                                 ],
                               ),
@@ -910,7 +550,6 @@ class _ClientFormPageState extends State<ClientFormPage> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 30),
                     ],
                   ),
@@ -922,16 +561,7 @@ class _ClientFormPageState extends State<ClientFormPage> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: AppColors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))]),
         child: SafeArea(
           child: Row(
             children: [
@@ -939,14 +569,11 @@ class _ClientFormPageState extends State<ClientFormPage> {
                 child: OutlinedButton(
                   onPressed: _isLoading ? null : () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey.shade700,
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    side: BorderSide(color: AppColors.divider),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Annuler'),
+                  child: Text('Annuler', style: TextStyle(color: AppColors.textSecondary)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -954,36 +581,18 @@ class _ClientFormPageState extends State<ClientFormPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _enregistrer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    backgroundColor: AppColors.secondaryYellow,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPurple))
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              isEditing ? Icons.save : Icons.person_add,
-                              color: Colors.white,
-                            ),
+                            Icon(isEditing ? Icons.save : Icons.person_add, color: AppColors.primaryPurple),
                             const SizedBox(width: 8),
-                            Text(
-                              isEditing ? 'Enregistrer' : 'Ajouter le client',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
+                            Text(isEditing ? 'Enregistrer' : 'Ajouter le client', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryPurple)),
                           ],
                         ),
                 ),
