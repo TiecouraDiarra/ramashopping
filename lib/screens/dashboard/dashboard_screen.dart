@@ -3,8 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:rama_shopping_app/screens/produits/liste_produits.dart';
+import '../../utils/theme.dart';
 import '../auth/login_screen.dart';
 import '../commandes/liste_commandes.dart';
+import '../commandes/detail_commande.dart';
 import '../tresorerie/comptabilite_screen.dart';
 import '../clients/liste_clients.dart';
 
@@ -18,24 +20,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   final user = FirebaseAuth.instance.currentUser;
-  String _greeting = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _setGreeting();
-  }
-
-  void _setGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      _greeting = 'Bonjour';
-    } else if (hour < 18) {
-      _greeting = 'Bon après-midi';
-    } else {
-      _greeting = 'Bonsoir';
-    }
-  }
 
   final List<Widget> _pages = [
     const DashboardHome(),
@@ -65,8 +49,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             setState(() => _selectedIndex = index);
           },
           elevation: 0,
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFF2E7D32).withOpacity(0.1),
+          backgroundColor: AppColors.white,
+          indicatorColor: AppColors.purpleVeryLight,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
             NavigationDestination(
@@ -119,91 +103,97 @@ class _DashboardHomeState extends State<DashboardHome> {
   int _totalProduits = 0;
   List<Map<String, dynamic>> _dernieresCommandes = [];
   bool _isLoading = true;
+  String _greeting = '';
 
   @override
   void initState() {
     super.initState();
+    _setGreeting();
     _loadDashboardData();
   }
 
-  Future<void> _loadDashboardData() async {
-  setState(() => _isLoading = true);
-  
-  try {
-    // 1. Charger le solde de la caisse
-    final caisseDoc = await _firestore.collection('caisse').doc('principale').get();
-    if (caisseDoc.exists) {
-      _soldeCaisse = (caisseDoc.data() as Map<String, dynamic>)['soldeActuel'] ?? 0;
-    }
-
-    // 2. Charger le CA d'aujourd'hui
-    final aujourdhui = DateTime.now();
-    final debutJour = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day);
-    final finJour = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day, 23, 59, 59);
-    
-    final ventesSnapshot = await _firestore
-        .collection('transactions')
-        .where('type', isEqualTo: 'vente')
-        .get();
-    
-    // Filtrer manuellement par date
-    _caAujourdhui = ventesSnapshot.docs.fold<double>(0, (sum, doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final dateTransaction = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
-      if (dateTransaction.isAfter(debutJour) && dateTransaction.isBefore(finJour)) {
-        return sum + (data['montant'] ?? 0);
-      }
-      return sum;
-    });
-
-    // 3. Charger les commandes en cours (non payées)
-    final commandesSnapshot = await _firestore
-        .collection('commandes')
-        .where('statut', isEqualTo: 'enAttente')
-        .get();
-    _commandesEnCours = commandesSnapshot.docs.length;
-
-    // 4. Charger le nombre total de clients
-    final clientsSnapshot = await _firestore.collection('clients').get();
-    _totalClients = clientsSnapshot.docs.length;
-
-    // 5. Charger le nombre total de produits
-    final produitsSnapshot = await _firestore.collection('produits').get();
-    _totalProduits = produitsSnapshot.docs.length;
-
-    // 6. Charger les 5 dernières commandes
-    final dernieresCommandesSnapshot = await _firestore
-        .collection('commandes')
-        .orderBy('date', descending: true)
-        .limit(5)
-        .get();
-    
-    _dernieresCommandes = dernieresCommandesSnapshot.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final clientPrenom = data['clientPrenom'] ?? '';
-      final clientNom = data['clientNom'] ?? '';
-      final clientComplet = clientPrenom.isNotEmpty && clientNom.isNotEmpty
-          ? '$clientPrenom $clientNom'
-          : (clientNom.isNotEmpty ? clientNom : 'Client inconnu');
-      
-      return {
-        'id': doc.id,
-        'numero': data['numero'] ?? 'N/A',
-        'client': clientComplet,
-        'montant': (data['montantTotal'] ?? 0).toDouble(),
-        'statut': data['statut'] ?? 'enAttente',
-        'date': (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      };
-    }).toList();
-    
-  } catch (e) {
-    print('Erreur chargement dashboard: $e');
-  } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
+  void _setGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      _greeting = 'Bonjour';
+    } else if (hour < 18) {
+      _greeting = 'Bon après-midi';
+    } else {
+      _greeting = 'Bonsoir';
     }
   }
-}
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final caisseDoc = await _firestore.collection('caisse').doc('principale').get();
+      if (caisseDoc.exists) {
+        _soldeCaisse = (caisseDoc.data() as Map<String, dynamic>)['soldeActuel'] ?? 0;
+      }
+
+      final aujourdhui = DateTime.now();
+      final debutJour = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day);
+      final finJour = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day, 23, 59, 59);
+
+      final ventesSnapshot = await _firestore
+          .collection('transactions')
+          .where('type', isEqualTo: 'vente')
+          .get();
+
+      _caAujourdhui = ventesSnapshot.docs.fold<double>(0, (sum, doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final dateTransaction = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+        if (dateTransaction.isAfter(debutJour) && dateTransaction.isBefore(finJour)) {
+          return sum + (data['montant'] ?? 0);
+        }
+        return sum;
+      });
+
+      final commandesSnapshot = await _firestore
+          .collection('commandes')
+          .where('statut', isEqualTo: 'enAttente')
+          .get();
+      _commandesEnCours = commandesSnapshot.docs.length;
+
+      final clientsSnapshot = await _firestore.collection('clients').get();
+      _totalClients = clientsSnapshot.docs.length;
+
+      final produitsSnapshot = await _firestore.collection('produits').get();
+      _totalProduits = produitsSnapshot.docs.length;
+
+      final dernieresCommandesSnapshot = await _firestore
+          .collection('commandes')
+          .orderBy('date', descending: true)
+          .limit(5)
+          .get();
+
+      _dernieresCommandes = dernieresCommandesSnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final clientPrenom = data['clientPrenom'] ?? '';
+        final clientNom = data['clientNom'] ?? '';
+        final clientComplet = clientPrenom.isNotEmpty && clientNom.isNotEmpty
+            ? '$clientPrenom $clientNom'
+            : (clientNom.isNotEmpty ? clientNom : 'Client inconnu');
+
+        return {
+          'id': doc.id,
+          'numero': data['numero'] ?? 'N/A',
+          'client': clientComplet,
+          'montant': (data['montantTotal'] ?? 0).toDouble(),
+          'montantPaye': (data['montantPaye'] ?? 0).toDouble(),
+          'statut': data['statut'] ?? 'enAttente',
+          'date': (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        };
+      }).toList();
+    } catch (e) {
+      print('Erreur chargement dashboard: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -211,14 +201,12 @@ class _DashboardHomeState extends State<DashboardHome> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Column(
@@ -237,30 +225,22 @@ class _DashboardHomeState extends State<DashboardHome> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF5252),
+                          color: AppColors.error,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF5252).withOpacity(0.3),
+                              color: AppColors.error.withOpacity(0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.logout,
-                          color: Colors.white,
-                          size: 32,
-                        ),
+                        child: const Icon(Icons.logout, color: Colors.white, size: 32),
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         'Déconnexion',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
                     ],
                   ),
@@ -270,7 +250,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                   child: Text(
                     'Êtes-vous sûr de vouloir vous déconnecter ?',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+                    style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                   ),
                 ),
                 Padding(
@@ -279,23 +259,13 @@ class _DashboardHomeState extends State<DashboardHome> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            side: BorderSide(color: AppColors.divider),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: Text(
-                            'Annuler',
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: Text('Annuler', style: TextStyle(color: AppColors.textSecondary)),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -307,26 +277,16 @@ class _DashboardHomeState extends State<DashboardHome> {
                             if (mounted) {
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
-                                ),
+                                MaterialPageRoute(builder: (_) => const LoginScreen()),
                               );
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF5252),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            backgroundColor: AppColors.error,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: const Text(
-                            'Déconnecter',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: const Text('Déconnecter', style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     ],
@@ -343,28 +303,26 @@ class _DashboardHomeState extends State<DashboardHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
+        color: AppColors.secondaryYellow,
+        backgroundColor: AppColors.primaryPurple,
         child: CustomScrollView(
           slivers: [
-            // Header avec gradient
+            // Header avec gradient Violet
             SliverAppBar(
               expandedHeight: 220,
               floating: false,
               pinned: true,
-              backgroundColor: const Color(0xFF2E7D32),
+              backgroundColor: AppColors.primaryPurple,
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF1B5E20),
-                        Color(0xFF2E7D32),
-                        Color(0xFF43A047),
-                      ],
+                      colors: [AppColors.primaryPurple, AppColors.purpleDark],
                     ),
                   ),
                   child: SafeArea(
@@ -382,10 +340,14 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  Icons.shopping_bag,
-                                  color: Colors.white,
-                                  size: 28,
+                                child: Image.asset(
+                                  'assets/images/logotrans.png',
+                                  height: 30,
+                                  width: 30,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.shopping_bag, color: Colors.white, size: 24);
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -395,18 +357,11 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   children: [
                                     Text(
                                       'Rama Shopping',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
+                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                                     ),
                                     Text(
                                       user?.email ?? 'Administrateur',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white.withOpacity(0.8),
-                                      ),
+                                      style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8)),
                                     ),
                                   ],
                                 ),
@@ -418,10 +373,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(
-                                    Icons.logout,
-                                    color: Colors.white,
-                                  ),
+                                  icon: const Icon(Icons.logout, color: Colors.white),
                                   onPressed: () => _showLogoutDialog(context),
                                 ),
                               ),
@@ -429,20 +381,13 @@ class _DashboardHomeState extends State<DashboardHome> {
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            'Bienvenue 👋',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            '$_greeting 👋',
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Voici ce qui se passe aujourd\'hui',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
                           ),
                         ],
                       ),
@@ -461,9 +406,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF2E7D32),
-                        ),
+                        child: CircularProgressIndicator(color: AppColors.secondaryYellow),
                       ),
                     )
                   else ...[
@@ -475,7 +418,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                             title: 'Solde caisse',
                             value: '${_soldeCaisse.toStringAsFixed(0)} FCFA',
                             icon: Icons.account_balance_wallet,
-                            color: const Color(0xFF4CAF50),
+                            color: AppColors.success,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -484,7 +427,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                             title: 'CA aujourd\'hui',
                             value: '${_caAujourdhui.toStringAsFixed(0)} FCFA',
                             icon: Icons.trending_up,
-                            color: const Color(0xFF2196F3),
+                            color: AppColors.info,
                           ),
                         ),
                       ],
@@ -497,7 +440,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                             title: 'Commandes en cours',
                             value: '$_commandesEnCours',
                             icon: Icons.pending_actions,
-                            color: const Color(0xFFFF9800),
+                            color: AppColors.warning,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -506,7 +449,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                             title: 'Total clients',
                             value: '$_totalClients',
                             icon: Icons.people,
-                            color: const Color(0xFF9C27B0),
+                            color: AppColors.primaryPurple,
                           ),
                         ),
                       ],
@@ -519,7 +462,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                             title: 'Total produits',
                             value: '$_totalProduits',
                             icon: Icons.inventory,
-                            color: const Color(0xFF2E7D32),
+                            color: AppColors.secondaryYellow,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -538,7 +481,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                     // Section Actions rapides
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Padding(
@@ -548,10 +491,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                           children: [
                             const Text(
                               'Actions rapides',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 16),
                             Row(
@@ -560,12 +500,9 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   child: _QuickAction(
                                     icon: Icons.add_shopping_cart,
                                     label: 'Commande',
-                                    color: const Color(0xFF4CAF50),
+                                    color: AppColors.success,
                                     onTap: () {
-                                      final bottomNavBar = context
-                                          .findAncestorStateOfType<
-                                            _DashboardScreenState
-                                          >();
+                                      final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
                                       if (bottomNavBar != null) {
                                         bottomNavBar.setState(() {
                                           bottomNavBar._selectedIndex = 1;
@@ -579,12 +516,9 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   child: _QuickAction(
                                     icon: Icons.payment,
                                     label: 'Encaissement',
-                                    color: const Color(0xFF2196F3),
+                                    color: AppColors.secondaryYellow,
                                     onTap: () {
-                                      final bottomNavBar = context
-                                          .findAncestorStateOfType<
-                                            _DashboardScreenState
-                                          >();
+                                      final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
                                       if (bottomNavBar != null) {
                                         bottomNavBar.setState(() {
                                           bottomNavBar._selectedIndex = 2;
@@ -598,12 +532,9 @@ class _DashboardHomeState extends State<DashboardHome> {
                                   child: _QuickAction(
                                     icon: Icons.person_add,
                                     label: 'Client',
-                                    color: const Color(0xFF9C27B0),
+                                    color: AppColors.primaryPurple,
                                     onTap: () {
-                                      final bottomNavBar = context
-                                          .findAncestorStateOfType<
-                                            _DashboardScreenState
-                                          >();
+                                      final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
                                       if (bottomNavBar != null) {
                                         bottomNavBar.setState(() {
                                           bottomNavBar._selectedIndex = 3;
@@ -623,7 +554,7 @@ class _DashboardHomeState extends State<DashboardHome> {
                     // Dernières commandes
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -636,7 +567,6 @@ class _DashboardHomeState extends State<DashboardHome> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // En-tête
                           Padding(
                             padding: const EdgeInsets.all(20),
                             child: Row(
@@ -647,36 +577,23 @@ class _DashboardHomeState extends State<DashboardHome> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Color(0xFF2E7D32),
-                                            Color(0xFF43A047),
-                                          ],
+                                        gradient: LinearGradient(
+                                          colors: [AppColors.primaryPurple, AppColors.purpleLight],
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: const Icon(
-                                        Icons.history,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
+                                      child: const Icon(Icons.history, color: Colors.white, size: 18),
                                     ),
                                     const SizedBox(width: 12),
                                     const Text(
                                       'Dernières commandes',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    final bottomNavBar = context
-                                        .findAncestorStateOfType<
-                                          _DashboardScreenState
-                                        >();
+                                    final bottomNavBar = context.findAncestorStateOfType<_DashboardScreenState>();
                                     if (bottomNavBar != null) {
                                       bottomNavBar.setState(() {
                                         bottomNavBar._selectedIndex = 1;
@@ -684,32 +601,19 @@ class _DashboardHomeState extends State<DashboardHome> {
                                     }
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF2E7D32,
-                                      ).withOpacity(0.1),
+                                      color: AppColors.primaryPurple.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Row(
                                       children: [
                                         Text(
                                           'Voir tout',
-                                          style: TextStyle(
-                                            color: const Color(0xFF2E7D32),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: TextStyle(color: AppColors.primaryPurple, fontSize: 12, fontWeight: FontWeight.w600),
                                         ),
                                         const SizedBox(width: 4),
-                                        Icon(
-                                          Icons.arrow_forward_ios,
-                                          color: const Color(0xFF2E7D32),
-                                          size: 10,
-                                        ),
+                                        Icon(Icons.arrow_forward_ios, color: AppColors.primaryPurple, size: 10),
                                       ],
                                     ),
                                   ),
@@ -718,13 +622,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                             ),
                           ),
 
-                          // Liste des commandes
                           if (_dernieresCommandes.isEmpty)
                             const Padding(
                               padding: EdgeInsets.all(32),
-                              child: Center(
-                                child: Text('Aucune commande pour le moment'),
-                              ),
+                              child: Center(child: Text('Aucune commande pour le moment')),
                             )
                           else
                             ListView.separated(
@@ -732,24 +633,22 @@ class _DashboardHomeState extends State<DashboardHome> {
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _dernieresCommandes.length,
                               separatorBuilder: (context, index) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                child: Divider(
-                                  height: 1,
-                                  color: Colors.grey.shade100,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: Divider(height: 1, color: AppColors.divider),
                               ),
                               itemBuilder: (context, index) {
                                 final commande = _dernieresCommandes[index];
-                                return _ModernCommandeTile(
+                                final montantPaye = commande['montantPaye'] ?? 0.0;
+                                final montantRestant = commande['montant'] - montantPaye;
+                                return _DashboardCommandeTile(
+                                  id: commande['id'],
                                   numero: commande['numero'],
                                   client: commande['client'],
-                                  date: DateFormat(
-                                    'dd/MM/yyyy HH:mm',
-                                  ).format(commande['date']),
-                                  montant: commande['montant'],
-                                  statut: _getStatutTexte(commande['statut']),
+                                  date: DateFormat('dd/MM/yyyy HH:mm').format(commande['date']),
+                                  montantTotal: commande['montant'],
+                                  montantPaye: montantPaye,
+                                  montantRestant: montantRestant,
+                                  statut: commande['statut'],
                                 );
                               },
                             ),
@@ -767,20 +666,227 @@ class _DashboardHomeState extends State<DashboardHome> {
       ),
     );
   }
+}
 
-  String _getStatutTexte(String statut) {
+class _DashboardCommandeTile extends StatelessWidget {
+  final String id;
+  final String numero;
+  final String client;
+  final String date;
+  final double montantTotal;
+  final double montantPaye;
+  final double montantRestant;
+  final String statut;
+
+  const _DashboardCommandeTile({
+    required this.id,
+    required this.numero,
+    required this.client,
+    required this.date,
+    required this.montantTotal,
+    required this.montantPaye,
+    required this.montantRestant,
+    required this.statut,
+  });
+
+  String _getStatutTexte() {
     switch (statut) {
-      case 'enAttente':
-        return 'En attente';
-      case 'payee':
-        return 'Payée';
-      case 'livree':
-        return 'Livrée';
-      case 'annulee':
-        return 'Annulée';
-      default:
-        return 'En attente';
+      case 'enAttente': return 'En attente';
+      case 'partiellementPayee': return 'Partiellement payée';
+      case 'payee': return 'Payée';
+      case 'livree': return 'Livrée';
+      case 'annulee': return 'Annulée';
+      default: return 'En attente';
     }
+  }
+
+  Color _getStatutCouleur() {
+    switch (statut) {
+      case 'enAttente': return AppColors.warning;
+      case 'partiellementPayee': return AppColors.warning;
+      case 'payee': return AppColors.success;
+      case 'livree': return AppColors.info;
+      case 'annulee': return AppColors.error;
+      default: return AppColors.warning;
+    }
+  }
+
+  IconData _getStatutIcone() {
+    switch (statut) {
+      case 'enAttente': return Icons.pending_actions;
+      case 'partiellementPayee': return Icons.payment;
+      case 'payee': return Icons.check_circle;
+      case 'livree': return Icons.local_shipping;
+      case 'annulee': return Icons.cancel;
+      default: return Icons.pending_actions;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pourcentage = montantTotal > 0 ? (montantPaye / montantTotal) * 100 : 0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailCommandePage(
+                commandeId: id,
+                commandeData: {
+                  'numero': numero,
+                  'clientNom': client.split(' ').last,
+                  'clientPrenom': client.split(' ').first,
+                  'montantTotal': montantTotal,
+                  'montantPaye': montantPaye,
+                  'statut': statut,
+                  'produits': [],
+                },
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: _getStatutCouleur().withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _getStatutIcone(),
+                      color: _getStatutCouleur(),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          numero,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          client,
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, size: 10, color: AppColors.textHint),
+                            const SizedBox(width: 4),
+                            Text(
+                              date,
+                              style: TextStyle(fontSize: 10, color: AppColors.textHint),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${montantTotal.toStringAsFixed(0)} FCFA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: AppColors.primaryPurple,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _getStatutCouleur().withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _getStatutTexte(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: _getStatutCouleur(),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (statut == 'partiellementPayee') ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.warning.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Payé:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            '${montantPaye.toStringAsFixed(0)} FCFA',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.success),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Reste:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            '${montantRestant.toStringAsFixed(0)} FCFA',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: montantRestant > 0 ? AppColors.error : AppColors.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: pourcentage / 100,
+                        backgroundColor: AppColors.divider,
+                        color: AppColors.warning,
+                        borderRadius: BorderRadius.circular(4),
+                        minHeight: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -801,7 +907,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -834,7 +940,7 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               title,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -878,169 +984,6 @@ class _QuickAction extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ModernCommandeTile extends StatelessWidget {
-  final String numero;
-  final String client;
-  final String date;
-  final double montant;
-  final String statut;
-
-  const _ModernCommandeTile({
-    required this.numero,
-    required this.client,
-    required this.date,
-    required this.montant,
-    required this.statut,
-  });
-
-  Color getStatutColor() {
-    switch (statut) {
-      case 'Payée':
-        return Colors.green;
-      case 'Livrée':
-        return Colors.blue;
-      default:
-        return Colors.orange;
-    }
-  }
-
-  String getStatutIcon() {
-    switch (statut) {
-      case 'Payée':
-        return '✓';
-      case 'Livrée':
-        return '📦';
-      default:
-        return '⏳';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    getStatutColor().withOpacity(0.15),
-                    getStatutColor().withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Text(
-                  getStatutIcon(),
-                  style: TextStyle(fontSize: 24, color: getStatutColor()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        numero,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: getStatutColor().withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          statut,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: getStatutColor(),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    client,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 10,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${montant.toStringAsFixed(0)} FCFA',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.receipt, size: 10, color: Colors.grey.shade400),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Facture',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
           ],
         ),
