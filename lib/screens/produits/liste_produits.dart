@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
-import 'package:rama_shopping_app/screens/produits/detail_produit.dart';
+import '../../utils/theme.dart';
+import 'detail_produit.dart';
 
 class ListeProduits extends StatefulWidget {
   const ListeProduits({super.key});
@@ -17,10 +15,21 @@ class _ListeProduitsState extends State<ListeProduits> {
   String _recherche = '';
   String _categorieFiltre = 'Toutes';
   final TextEditingController _searchController = TextEditingController();
+  
+  final CollectionReference _produits = FirebaseFirestore.instance.collection('produits');
 
-  final CollectionReference _produits = FirebaseFirestore.instance.collection(
-    'produits',
-  );
+  final List<String> _categories = [
+    'Toutes',
+    'Vêtements',
+    'Chaussures',
+    'Accessoires',
+    'Bijoux',
+    'Électronique',
+    'Maison',
+    'Beauté',
+    'Alimentation',
+    'Autre',
+  ];
 
   @override
   void initState() {
@@ -45,10 +54,7 @@ class _ListeProduitsState extends State<ListeProduits> {
     );
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Produit ajouté avec succès'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Produit ajouté avec succès'), backgroundColor: AppColors.success),
       );
     }
   }
@@ -57,16 +63,12 @@ class _ListeProduitsState extends State<ListeProduits> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ProduitFormPage(produit: produit, produitId: produit['id']),
+        builder: (context) => ProduitFormPage(produit: produit, produitId: produit['id']),
       ),
     );
     if (result == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Produit modifié avec succès'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Produit modifié avec succès'), backgroundColor: AppColors.success),
       );
     }
   }
@@ -85,21 +87,18 @@ class _ListeProduitsState extends State<ListeProduits> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Supprimer'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
-
+    
     if (confirm == true) {
       await _produits.doc(id).delete();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Produit supprimé'),
-            backgroundColor: Colors.orange,
-          ),
+          const SnackBar(content: Text('Produit supprimé'), backgroundColor: AppColors.warning),
         );
       }
     }
@@ -108,14 +107,14 @@ class _ListeProduitsState extends State<ListeProduits> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // En-tête avec recherche
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -131,30 +130,22 @@ class _ListeProduitsState extends State<ListeProduits> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
+                          color: AppColors.background,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: TextField(
                           controller: _searchController,
                           decoration: InputDecoration(
                             hintText: 'Rechercher un produit...',
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Colors.grey.shade500,
-                            ),
+                            prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
                             suffixIcon: _recherche.isNotEmpty
                                 ? IconButton(
-                                    icon: Icon(
-                                      Icons.clear,
-                                      color: Colors.grey.shade500,
-                                    ),
+                                    icon: Icon(Icons.clear, color: AppColors.textSecondary),
                                     onPressed: () => _searchController.clear(),
                                   )
                                 : null,
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
                       ),
@@ -162,9 +153,7 @@ class _ListeProduitsState extends State<ListeProduits> {
                     const SizedBox(width: 12),
                     Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-                        ),
+                        gradient: LinearGradient(colors: [AppColors.primaryPurple, AppColors.purpleLight]),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: IconButton(
@@ -179,21 +168,13 @@ class _ListeProduitsState extends State<ListeProduits> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: [
-                      _buildChipFiltre('Toutes'),
-                      _buildChipFiltre('Vêtements'),
-                      _buildChipFiltre('Chaussures'),
-                      _buildChipFiltre('Accessoires'),
-                      _buildChipFiltre('Électronique'),
-                      _buildChipFiltre('Maison'),
-                      _buildChipFiltre('Beauté'),
-                    ],
+                    children: _categories.map((categorie) => _buildChipFiltre(categorie)).toList(),
                   ),
                 ),
               ],
             ),
           ),
-
+          
           // Liste des produits
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -204,11 +185,7 @@ class _ListeProduitsState extends State<ListeProduits> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red.shade300,
-                        ),
+                        Icon(Icons.error_outline, size: 64, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text('Erreur: ${snapshot.error}'),
                       ],
@@ -218,7 +195,7 @@ class _ListeProduitsState extends State<ListeProduits> {
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                    child: CircularProgressIndicator(color: AppColors.primaryPurple),
                   );
                 }
 
@@ -227,29 +204,19 @@ class _ListeProduitsState extends State<ListeProduits> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.inventory_2_outlined,
-                          size: 80,
-                          color: Colors.grey.shade300,
-                        ),
+                        Icon(Icons.inventory_2_outlined, size: 80, color: AppColors.textHint),
                         const SizedBox(height: 16),
                         Text(
                           'Aucun produit',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 16,
-                          ),
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: _ajouterProduit,
                           icon: const Icon(Icons.add),
-                          label: const Text(
-                            'Ajouter un produit',
-                            style: TextStyle(color: Colors.white),
-                          ),
+                          label: const Text('Ajouter un produit', style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7D32),
+                            backgroundColor: AppColors.primaryPurple,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -265,12 +232,8 @@ class _ListeProduitsState extends State<ListeProduits> {
                   final nom = data['nom'] ?? '';
                   final categorie = data['categorie'] ?? '';
                   final rechercheLower = _recherche.toLowerCase();
-                  final matchRecherche = nom.toLowerCase().contains(
-                    rechercheLower,
-                  );
-                  final matchCategorie =
-                      _categorieFiltre == 'Toutes' ||
-                      categorie == _categorieFiltre;
+                  final matchRecherche = nom.toLowerCase().contains(rechercheLower);
+                  final matchCategorie = _categorieFiltre == 'Toutes' || categorie == _categorieFiltre;
                   return matchRecherche && matchCategorie;
                 }).toList();
 
@@ -279,15 +242,11 @@ class _ListeProduitsState extends State<ListeProduits> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 80,
-                          color: Colors.grey.shade300,
-                        ),
+                        Icon(Icons.search_off, size: 80, color: AppColors.textHint),
                         const SizedBox(height: 16),
                         Text(
                           'Aucun résultat pour "$_recherche"',
-                          style: TextStyle(color: Colors.grey.shade500),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -309,8 +268,7 @@ class _ListeProduitsState extends State<ListeProduits> {
                       description: data['description'] ?? '',
                       imageUrl: data['imageUrl'] ?? '',
                       onEdit: () => _modifierProduit({...data, 'id': doc.id}),
-                      onDelete: () =>
-                          _supprimerProduit(doc.id, data['nom'] ?? ''),
+                      onDelete: () => _supprimerProduit(doc.id, data['nom'] ?? ''),
                     );
                   },
                 );
@@ -333,13 +291,11 @@ class _ListeProduitsState extends State<ListeProduits> {
             _categorieFiltre = selected ? categorie : 'Toutes';
           });
         },
-        selectedColor: const Color(0xFF2E7D32).withOpacity(0.2),
-        checkmarkColor: const Color(0xFF2E7D32),
-        backgroundColor: Colors.white,
+        selectedColor: AppColors.primaryPurple.withOpacity(0.2),
+        checkmarkColor: AppColors.primaryPurple,
+        backgroundColor: AppColors.white,
         side: BorderSide(
-          color: _categorieFiltre == categorie
-              ? const Color(0xFF2E7D32)
-              : Colors.grey.shade300,
+          color: _categorieFiltre == categorie ? AppColors.primaryPurple : AppColors.divider,
         ),
       ),
     );
@@ -371,9 +327,9 @@ class _ProduitCard extends StatelessWidget {
   });
 
   Color getStockColor() {
-    if (stock <= 0) return Colors.red;
-    if (stock < 10) return Colors.orange;
-    return Colors.green;
+    if (stock <= 0) return AppColors.error;
+    if (stock < 10) return AppColors.warning;
+    return AppColors.success;
   }
 
   String getStockText() {
@@ -389,31 +345,30 @@ class _ProduitCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.shade100, width: 1),
+        side: BorderSide(color: AppColors.divider, width: 1),
       ),
-      child: InkWell(
-        onTap: () {
-          // Navigation vers le détail produit
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailProduitPage(
-                produitId: id,
-                produitData: {
-                  'nom': nom,
-                  'prix': prix,
-                  'categorie': categorie,
-                  'stock': stock,
-                  'description': description,
-                  'imageUrl': imageUrl,
-                },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailProduitPage(
+                  produitId: id,
+                  produitData: {
+                    'nom': nom,
+                    'prix': prix,
+                    'categorie': categorie,
+                    'stock': stock,
+                    'description': description,
+                    'imageUrl': imageUrl,
+                  },
+                ),
               ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -430,23 +385,20 @@ class _ProduitCard extends StatelessWidget {
                           return Container(
                             width: 80,
                             height: 80,
-                            color: Colors.grey.shade200,
-                            child: const Icon(
-                              Icons.broken_image,
-                              color: Colors.grey,
-                            ),
+                            color: AppColors.background,
+                            child: Icon(Icons.broken_image, color: AppColors.textHint),
                           );
                         },
                       )
                     : Container(
                         width: 80,
                         height: 80,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.image, color: Colors.grey),
+                        color: AppColors.background,
+                        child: Icon(Icons.image, color: AppColors.textHint),
                       ),
               ),
               const SizedBox(width: 16),
-
+              
               // Informations
               Expanded(
                 child: Column(
@@ -467,10 +419,7 @@ class _ProduitCard extends StatelessWidget {
                           ),
                         ),
                         PopupMenuButton(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: Colors.grey.shade600,
-                          ),
+                          icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
                           onSelected: (value) {
                             if (value == 'edit') {
                               onEdit();
@@ -506,19 +455,16 @@ class _ProduitCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     // Catégorie
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E7D32).withOpacity(0.1),
+                        color: AppColors.primaryPurple.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         categorie,
                         style: TextStyle(
                           fontSize: 10,
-                          color: const Color(0xFF2E7D32),
+                          color: AppColors.primaryPurple,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -527,10 +473,10 @@ class _ProduitCard extends StatelessWidget {
                     // Prix
                     Text(
                       '${prix.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Color(0xFF2E7D32),
+                        color: AppColors.primaryPurple,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -564,7 +510,7 @@ class _ProduitCard extends StatelessWidget {
   }
 }
 
-// Formulaire produit avec deux sections
+// Formulaire produit
 class ProduitFormPage extends StatefulWidget {
   final Map<String, dynamic>? produit;
   final String? produitId;
@@ -581,27 +527,24 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
   final _prixController = TextEditingController();
   final _stockController = TextEditingController();
   final _descriptionController = TextEditingController();
-
+  final _imageUrlController = TextEditingController();
+  
   String _selectedCategorie = 'Vêtements';
-  String? _imageUrl;
-  File? _selectedImage;
   bool _isLoading = false;
-  bool _isUploading = false;
-
+  
   final List<String> _categories = [
     'Vêtements',
     'Chaussures',
     'Accessoires',
+    'Bijoux',
     'Électronique',
     'Maison',
     'Beauté',
     'Alimentation',
     'Autre',
   ];
-
+  
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -611,8 +554,8 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
       _prixController.text = (widget.produit!['prix'] ?? 0).toString();
       _stockController.text = (widget.produit!['stock'] ?? 0).toString();
       _descriptionController.text = widget.produit!['description'] ?? '';
+      _imageUrlController.text = widget.produit!['imageUrl'] ?? '';
       _selectedCategorie = widget.produit!['categorie'] ?? 'Vêtements';
-      _imageUrl = widget.produit!['imageUrl'];
     }
   }
 
@@ -622,157 +565,15 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
     _prixController.dispose();
     _stockController.dispose();
     _descriptionController.dispose();
+    _imageUrlController.dispose();
     super.dispose();
-  }
-
-  Widget _buildImagePreview() {
-    // Cas 1: Upload en cours
-    if (_isUploading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('Téléchargement en cours...'),
-          ],
-        ),
-      );
-    }
-
-    // Cas 2: Image sélectionnée (fichier local)
-    if (_selectedImage != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.file(
-          _selectedImage!,
-          width: double.infinity,
-          height: 200,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-
-    // Cas 3: Image existante (URL)
-    if (_imageUrl != null && _imageUrl!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.network(
-          _imageUrl!,
-          width: double.infinity,
-          height: 200,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey.shade200,
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.broken_image, size: 50),
-                    SizedBox(height: 8),
-                    Text('Image non disponible'),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Cas 4: Pas d'image
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.cloud_upload_outlined, size: 50),
-        SizedBox(height: 12),
-        Text('Cliquez pour ajouter une image'),
-        SizedBox(height: 8),
-        Text('Galerie ou Appareil photo', style: TextStyle(fontSize: 12)),
-      ],
-    );
-  }
-
-  Future<void> _pickerImage() async {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galerie'),
-              onTap: () async {
-                Navigator.pop(context);
-                final XFile? image = await _picker.pickImage(
-                  source: ImageSource.gallery,
-                );
-                if (image != null) {
-                  setState(() {
-                    _selectedImage = File(image.path);
-                    _imageUrl = null;
-                  });
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Appareil photo'),
-              onTap: () async {
-                Navigator.pop(context);
-                final XFile? image = await _picker.pickImage(
-                  source: ImageSource.camera,
-                );
-                if (image != null) {
-                  setState(() {
-                    _selectedImage = File(image.path);
-                    _imageUrl = null;
-                  });
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<String?> _uploadImage(File image) async {
-    try {
-      setState(() => _isUploading = true);
-      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      final ref = _storage.ref().child('produits/$fileName.jpg');
-      await ref.putFile(image);
-      final url = await ref.getDownloadURL();
-      return url;
-    } catch (e) {
-      print('Erreur upload: $e');
-      return null;
-    } finally {
-      setState(() => _isUploading = false);
-    }
   }
 
   Future<void> _enregistrer() async {
     if (!_formKey.currentState!.validate()) return;
-
+    
     setState(() => _isLoading = true);
-
-    String? finalImageUrl = _imageUrl;
-
-    // Upload de la nouvelle image si sélectionnée
-    if (_selectedImage != null) {
-      final uploadedUrl = await _uploadImage(_selectedImage!);
-      if (uploadedUrl != null) {
-        finalImageUrl = uploadedUrl;
-      }
-    }
-
+    
     try {
       final data = {
         'nom': _nomController.text.trim(),
@@ -780,25 +581,22 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
         'categorie': _selectedCategorie,
         'stock': int.parse(_stockController.text),
         'description': _descriptionController.text.trim(),
-        'imageUrl': finalImageUrl ?? '',
+        'imageUrl': _imageUrlController.text.trim(),
         'dateCreation': Timestamp.now(),
       };
-
+      
       if (widget.produitId != null) {
-        await _firestore
-            .collection('produits')
-            .doc(widget.produitId)
-            .update(data);
+        await _firestore.collection('produits').doc(widget.produitId).update(data);
       } else {
         await _firestore.collection('produits').add(data);
       }
-
+      
       if (mounted) {
         Navigator.pop(context, true);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -808,29 +606,25 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.produitId != null;
-
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // AppBar avec gradient vert
+          // AppBar avec gradient violet
           SliverAppBar(
             expandedHeight: 180,
             pinned: true,
-            backgroundColor: const Color(0xFF2E7D32),
+            backgroundColor: AppColors.primaryPurple,
             foregroundColor: Colors.white,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1B5E20),
-                      Color(0xFF2E7D32),
-                      Color(0xFF43A047),
-                    ],
+                    colors: [AppColors.primaryPurple, AppColors.purpleDark],
                   ),
                 ),
                 child: SafeArea(
@@ -861,9 +655,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        isEditing
-                            ? 'Modifiez les informations'
-                            : 'Ajoutez un nouveau produit',
+                        isEditing ? 'Modifiez les informations' : 'Ajoutez un nouveau produit',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white.withOpacity(0.8),
@@ -875,7 +667,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
               ),
             ),
           ),
-
+          
           // Formulaire
           SliverPadding(
             padding: const EdgeInsets.all(20),
@@ -885,10 +677,10 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      // SECTION 1: Informations produit
+                      // Informations produit
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.white,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
@@ -905,9 +697,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E7D32,
-                                ).withOpacity(0.05),
+                                color: AppColors.primaryPurple.withOpacity(0.05),
                                 borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(24),
                                   topRight: Radius.circular(24),
@@ -918,11 +708,11 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2E7D32),
+                                      color: AppColors.primaryPurple,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Icon(
-                                      Icons.info_outline,
+                                      Icons.inventory_2_outlined,
                                       color: Colors.white,
                                       size: 20,
                                     ),
@@ -938,7 +728,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                 ],
                               ),
                             ),
-
+                            
                             Padding(
                               padding: const EdgeInsets.all(20),
                               child: Column(
@@ -949,14 +739,12 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                     decoration: InputDecoration(
                                       labelText: 'Nom du produit *',
                                       hintText: 'Ex: T-shirt Premium',
-                                      prefixIcon: const Icon(
-                                        Icons.label_outline,
-                                      ),
+                                      prefixIcon: const Icon(Icons.label_outline),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       filled: true,
-                                      fillColor: Colors.grey.shade50,
+                                      fillColor: AppColors.background,
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -966,7 +754,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                     },
                                   ),
                                   const SizedBox(height: 20),
-
+                                  
                                   // Prix et Catégorie
                                   Row(
                                     children: [
@@ -977,20 +765,16 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                           decoration: InputDecoration(
                                             labelText: 'Prix *',
                                             hintText: '0',
-                                            prefixIcon: const Icon(
-                                              Icons.attach_money,
-                                            ),
+                                            prefixIcon: const Icon(Icons.attach_money),
                                             suffixText: 'FCFA',
                                             border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
+                                              borderRadius: BorderRadius.circular(16),
                                             ),
                                             filled: true,
-                                            fillColor: Colors.grey.shade50,
+                                            fillColor: AppColors.background,
                                           ),
                                           validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
+                                            if (value == null || value.isEmpty) {
                                               return 'Prix requis';
                                             }
                                             return null;
@@ -1003,15 +787,12 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                           value: _selectedCategorie,
                                           decoration: InputDecoration(
                                             labelText: 'Catégorie *',
-                                            prefixIcon: const Icon(
-                                              Icons.category,
-                                            ),
+                                            prefixIcon: const Icon(Icons.category),
                                             border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
+                                              borderRadius: BorderRadius.circular(16),
                                             ),
                                             filled: true,
-                                            fillColor: Colors.grey.shade50,
+                                            fillColor: AppColors.background,
                                           ),
                                           items: _categories.map((categorie) {
                                             return DropdownMenuItem(
@@ -1020,16 +801,14 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                             );
                                           }).toList(),
                                           onChanged: (value) {
-                                            setState(
-                                              () => _selectedCategorie = value!,
-                                            );
+                                            setState(() => _selectedCategorie = value!);
                                           },
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 20),
-
+                                  
                                   // Stock
                                   TextFormField(
                                     controller: _stockController,
@@ -1042,7 +821,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       filled: true,
-                                      fillColor: Colors.grey.shade50,
+                                      fillColor: AppColors.background,
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -1052,7 +831,23 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                     },
                                   ),
                                   const SizedBox(height: 20),
-
+                                  
+                                  // URL Image
+                                  TextFormField(
+                                    controller: _imageUrlController,
+                                    decoration: InputDecoration(
+                                      labelText: 'URL de l\'image',
+                                      hintText: 'https://...',
+                                      prefixIcon: const Icon(Icons.image),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      filled: true,
+                                      fillColor: AppColors.background,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  
                                   // Description
                                   TextFormField(
                                     controller: _descriptionController,
@@ -1060,14 +855,12 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                                     decoration: InputDecoration(
                                       labelText: 'Description',
                                       hintText: 'Description du produit...',
-                                      prefixIcon: const Icon(
-                                        Icons.description_outlined,
-                                      ),
+                                      prefixIcon: const Icon(Icons.description_outlined),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       filled: true,
-                                      fillColor: Colors.grey.shade50,
+                                      fillColor: AppColors.background,
                                     ),
                                   ),
                                 ],
@@ -1076,128 +869,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                           ],
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // SECTION 2: Images produit
-                      // SECTION 2: Images produit
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2196F3,
-                                ).withOpacity(0.05),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(24),
-                                  topRight: Radius.circular(24),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2196F3),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.image_outlined,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'Image du produit',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  GestureDetector(
-                                    onTap: _pickerImage,
-                                    child: Container(
-                                      height: 200,
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade50,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
-                                        ),
-                                      ),
-                                      child: _buildImagePreview(),
-                                    ),
-                                  ),
-
-                                  if (_selectedImage != null ||
-                                      (_imageUrl != null &&
-                                          _imageUrl!.isNotEmpty))
-                                    const SizedBox(height: 12),
-
-                                  if (_selectedImage != null ||
-                                      (_imageUrl != null &&
-                                          _imageUrl!.isNotEmpty))
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        TextButton.icon(
-                                          onPressed: () {
-                                            setState(() {
-                                              _selectedImage = null;
-                                              _imageUrl = null;
-                                            });
-                                          },
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
-                                          ),
-                                          label: const Text(
-                                            'Supprimer l\'image',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Formats supportés : JPG, PNG, GIF',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
+                      
                       const SizedBox(height: 30),
                     ],
                   ),
@@ -1210,7 +882,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.white,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -1226,8 +898,8 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                 child: OutlinedButton(
                   onPressed: _isLoading ? null : () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey.shade700,
-                    side: BorderSide(color: Colors.grey.shade300),
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(color: AppColors.divider),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -1241,7 +913,7 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _enregistrer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
+                    backgroundColor: AppColors.secondaryYellow,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -1251,25 +923,16 @@ class _ProduitFormPageState extends State<ProduitFormPage> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPurple),
                         )
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              isEditing ? Icons.save : Icons.add,
-                              color: Colors.white,
-                            ),
+                            Icon(isEditing ? Icons.save : Icons.add, color: AppColors.primaryPurple),
                             const SizedBox(width: 8),
                             Text(
                               isEditing ? 'Enregistrer' : 'Ajouter le produit',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
+                              style: TextStyle(fontSize: 16, color: AppColors.primaryPurple),
                             ),
                           ],
                         ),
