@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../../utils/theme.dart';
 
 class NouvelleTransactionPage extends StatefulWidget {
   const NouvelleTransactionPage({super.key});
@@ -25,19 +26,18 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final List<Map<String, dynamic>> _types = [
-    {'value': 'vente', 'label': '💰 Vente (Paiement total)', 'icon': Icons.shopping_cart, 'color': Colors.green},
-    {'value': 'acompte', 'label': '💵 Acompte (Paiement partiel)', 'icon': Icons.payment, 'color': Colors.cyan},
-    {'value': 'achat', 'label': '📦 Achat', 'icon': Icons.inventory, 'color': Colors.blue},
+    {'value': 'vente', 'label': '💰 Vente (Paiement total)', 'icon': Icons.shopping_cart, 'color': AppColors.success},
+    {'value': 'acompte', 'label': '💵 Acompte (Paiement partiel)', 'icon': Icons.payment, 'color': AppColors.warning},
+    {'value': 'achat', 'label': '📦 Achat', 'icon': Icons.inventory, 'color': AppColors.info},
     {'value': 'frais', 'label': '📄 Frais', 'icon': Icons.receipt, 'color': Colors.orange},
-    {'value': 'retrait', 'label': '💸 Retrait', 'icon': Icons.payments, 'color': Colors.red},
+    {'value': 'retrait', 'label': '💸 Retrait', 'icon': Icons.payments, 'color': AppColors.error},
   ];
 
   final List<Map<String, dynamic>> _modes = [
-    {'value': 'cash', 'label': 'Espèces', 'icon': Icons.money, 'color': Colors.green},
-    {'value': 'orange', 'label': 'Orange monnaie', 'icon': Icons.credit_card, 'color': Colors.orange},
-    {'value': 'malitel', 'label': 'Moov', 'icon': Icons.credit_card, 'color': Colors.blue},
-    {'value': 'wafe', 'label': 'Wave', 'icon': Icons.credit_card, 'color': Colors.blue},
-    // {'value': 'virement', 'label': 'Virement', 'icon': Icons.account_balance, 'color': Colors.purple},
+    {'value': 'cash', 'label': 'Espèces', 'icon': Icons.money, 'color': AppColors.success},
+    {'value': 'orange', 'label': 'Orange Money', 'icon': Icons.phone_android, 'color': Colors.orange},
+    {'value': 'malitel', 'label': 'Malitel', 'icon': Icons.phone_android, 'color': Colors.blue},
+    {'value': 'wave', 'label': 'Wave', 'icon': Icons.phone_android, 'color': Colors.blue},
   ];
 
   @override
@@ -55,7 +55,6 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
 
   Future<void> _loadCommandes() async {
     try {
-      // Charger les commandes non entièrement payées
       final snapshot = await _firestore
           .collection('commandes')
           .where('statut', whereIn: ['enAttente', 'partiellementPayee'])
@@ -84,7 +83,6 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
         };
       }).toList();
       
-      // Trier par date
       commandesList.sort((a, b) => b['date']?.compareTo(a['date']) ?? 0);
       
       setState(() {
@@ -117,7 +115,6 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
       await _firestore.collection('transactions').add(transactionData);
       await _mettreAJourCaisse(transactionData);
       
-      // 🔥 Gestion du paiement (total ou partiel) lié à une commande
       if (_commandeId != null && _commandeId!.isNotEmpty) {
         final commandeDoc = await _firestore.collection('commandes').doc(_commandeId).get();
         if (commandeDoc.exists) {
@@ -126,7 +123,6 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
           final montantDejaPaye = (commandeData['montantPaye'] ?? 0).toDouble();
           final nouveauMontantPaye = montantDejaPaye + montant;
           
-          // Déterminer le nouveau statut
           String nouveauStatut;
           if (nouveauMontantPaye >= montantTotal) {
             nouveauStatut = 'payee';
@@ -136,7 +132,6 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
             nouveauStatut = 'enAttente';
           }
           
-          // Mettre à jour la commande
           await _firestore.collection('commandes').doc(_commandeId).update({
             'montantPaye': nouveauMontantPaye,
             'statut': nouveauStatut,
@@ -149,7 +144,7 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -181,10 +176,10 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Nouvelle transaction'),
-        backgroundColor: const Color(0xFF2E7D32),
+        title: const Text('Nouvelle transaction', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.primaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -197,14 +192,10 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
               // Type de transaction
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Column(
@@ -213,27 +204,18 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E7D32).withOpacity(0.05),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
+                        color: AppColors.primaryPurple.withOpacity(0.05),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2E7D32),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            decoration: BoxDecoration(color: AppColors.primaryPurple, borderRadius: BorderRadius.circular(12)),
                             child: const Icon(Icons.category, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'Type de transaction',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+                          const Text('Type de transaction', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -255,7 +237,7 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                                 }
                               });
                             },
-                            avatar: Icon(type['icon'], size: 18, color: isSelected ? type['color'] : Colors.grey),
+                            avatar: Icon(type['icon'], size: 18, color: isSelected ? type['color'] : AppColors.textHint),
                             selectedColor: (type['color'] as Color).withOpacity(0.2),
                             checkmarkColor: type['color'],
                           );
@@ -270,14 +252,10 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
               // Montant
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Padding(
@@ -288,21 +266,15 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                     decoration: InputDecoration(
                       labelText: 'Montant *',
                       hintText: '0',
-                      prefixIcon: const Icon(Icons.attach_money),
+                      prefixIcon: const Icon(Icons.attach_money, color: AppColors.primaryPurple),
                       suffixText: 'FCFA',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: AppColors.background,
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer le montant';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Montant invalide';
-                      }
+                      if (value == null || value.isEmpty) return 'Veuillez entrer le montant';
+                      if (double.tryParse(value) == null) return 'Montant invalide';
                       return null;
                     },
                   ),
@@ -313,14 +285,10 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
               // Mode de paiement
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Column(
@@ -329,27 +297,18 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withOpacity(0.05),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
+                        color: AppColors.secondaryYellow.withOpacity(0.05),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            decoration: BoxDecoration(color: AppColors.secondaryYellow, borderRadius: BorderRadius.circular(12)),
                             child: const Icon(Icons.payment, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'Mode de paiement',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+                          const Text('Mode de paiement', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -364,10 +323,8 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                               child: ChoiceChip(
                                 label: Text(mode['label']),
                                 selected: isSelected,
-                                onSelected: (selected) {
-                                  setState(() => _modePaiement = mode['value']);
-                                },
-                                avatar: Icon(mode['icon'], size: 16),
+                                onSelected: (selected) => setState(() => _modePaiement = mode['value']),
+                                avatar: Icon(mode['icon'], size: 16, color: isSelected ? mode['color'] : AppColors.textHint),
                                 selectedColor: (mode['color'] as Color).withOpacity(0.2),
                               ),
                             ),
@@ -380,18 +337,14 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
               ),
               const SizedBox(height: 16),
               
-              // Commande associée (pour les ventes et acomptes)
+              // Commande associée
               if (_typeTransaction == 'vente' || _typeTransaction == 'acompte') ...[
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.white,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
+                      BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
                     ],
                   ),
                   child: Column(
@@ -400,27 +353,18 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF9800).withOpacity(0.05),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          ),
+                          color: AppColors.warning.withOpacity(0.05),
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF9800),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                              decoration: BoxDecoration(color: AppColors.warning, borderRadius: BorderRadius.circular(12)),
                               child: const Icon(Icons.receipt, color: Colors.white, size: 20),
                             ),
                             const SizedBox(width: 12),
-                            const Text(
-                              'Commande associée',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
+                            const Text('Commande associée', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -431,9 +375,9 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
+                              color: AppColors.background,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: AppColors.divider),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -442,28 +386,20 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        'Commande associée',
-                                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
+                                      const Text('Commande associée', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                       const SizedBox(height: 4),
                                       Text(
-                                        _commandeId == null
-                                            ? 'Sélectionner une commande'
-                                            : _getCommandeInfo(),
-                                        style: const TextStyle(fontSize: 14),
+                                        _commandeId == null ? 'Sélectionner une commande' : _getCommandeInfo(),
+                                        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
                                       ),
                                       if (_commandeId != null) ...[
                                         const SizedBox(height: 2),
-                                        Text(
-                                          _getCommandeStatus(),
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
+                                        Text(_getCommandeStatus(), style: const TextStyle(fontSize: 12, color: AppColors.warning)),
                                       ],
                                     ],
                                   ),
                                 ),
-                                Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+                                Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                               ],
                             ),
                           ),
@@ -478,14 +414,10 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
               // Description
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Padding(
@@ -496,17 +428,13 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
                     decoration: InputDecoration(
                       labelText: 'Description *',
                       hintText: 'Description de la transaction...',
-                      prefixIcon: const Icon(Icons.description_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      prefixIcon: const Icon(Icons.description_outlined, color: AppColors.primaryPurple),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: AppColors.background,
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Veuillez entrer une description';
-                      }
+                      if (value == null || value.isEmpty) return 'Veuillez entrer une description';
                       return null;
                     },
                   ),
@@ -520,13 +448,9 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.white,
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
           ],
         ),
         child: SafeArea(
@@ -536,17 +460,12 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _enregistrer,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                backgroundColor: AppColors.secondaryYellow,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'Enregistrer la transaction',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+                  ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPurple))
+                  : const Text('Enregistrer la transaction', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryPurple)),
             ),
           ),
         ),
@@ -570,38 +489,30 @@ class _NouvelleTransactionPageState extends State<NouvelleTransactionPage> {
   void _showCommandeSelector() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Container(
           height: 500,
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const Text(
-                'Sélectionner une commande',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text('Sélectionner une commande', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const Divider(),
               Expanded(
                 child: _commandes.isEmpty
-                    ? const Center(child: Text('Aucune commande en attente'))
+                    ? Center(child: Text('Aucune commande en attente', style: TextStyle(color: AppColors.textSecondary)))
                     : ListView.builder(
                         itemCount: _commandes.length,
                         itemBuilder: (context, index) {
                           final commande = _commandes[index];
                           return ListTile(
-                            leading: const Icon(Icons.receipt, color: Color(0xFFFF9800)),
-                            title: Text(commande['numero']),
+                            leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.receipt, color: AppColors.warning)),
+                            title: Text(commande['numero'], style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(commande['client']),
-                                Text(
-                                  'Total: ${commande['montantTotal'].toStringAsFixed(0)} FCFA | Restant: ${commande['montantRestant'].toStringAsFixed(0)} FCFA',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+                                Text(commande['client'], style: const TextStyle(fontSize: 12)),
+                                Text('Total: ${commande['montantTotal'].toStringAsFixed(0)} FCFA | Restant: ${commande['montantRestant'].toStringAsFixed(0)} FCFA', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                               ],
                             ),
                             onTap: () {
