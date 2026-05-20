@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "703058455216",
+    "project_id": "rama-shopping-app",
+    "storage_bucket": "rama-shopping-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:703058455216:android:c95a7a063eb97f74922975",
+        "android_client_info": {
+          "package_name": "com.rama.shopping"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkvND-Ozt9cdftQqm4Lb8Qqws1FgwPVNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
