@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../utils/theme.dart';
 
 class NouvelleCommandePage extends StatefulWidget {
   const NouvelleCommandePage({super.key});
@@ -10,11 +11,9 @@ class NouvelleCommandePage extends StatefulWidget {
 }
 
 class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
-  // Contrôleurs
   final _formKey = GlobalKey<FormState>();
   final _searchController = TextEditingController();
 
-  // Données
   String? _selectedClientId;
   String _selectedClientNom = '';
   String _selectedClientPrenom = '';
@@ -28,7 +27,6 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
   bool _isLoading = false;
   bool _isSearching = false;
 
-  // Firestore
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -41,7 +39,6 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
     for (var produit in _produitsSelectionnes) {
       final produitId = produit['id'];
       final quantite = produit['quantite'];
-
       if (produitId != null && quantite != null) {
         final produitRef = _firestore.collection('produits').doc(produitId);
         await produitRef.update({'stock': FieldValue.increment(-quantite)});
@@ -71,16 +68,11 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
     }
   }
 
-  void _rechercherClient(String query) {
-    setState(() => _isSearching = query.isNotEmpty);
-  }
-
   Future<void> _selectionnerClient() async {
     final result = await showDialog(
       context: context,
       builder: (context) => const ClientSearchDialog(),
     );
-
     if (result != null && mounted) {
       setState(() {
         _selectedClientId = result['id'];
@@ -102,30 +94,21 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
       builder: (context) => ProduitSelectionSheet(
         produits: _produitsDisponibles,
         onProduitSelected: (produit) {
-          // Vérifier le stock avant d'ajouter
           if (produit['stock'] <= 0) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Stock insuffisant pour ${produit['nom']}'),
-                backgroundColor: Colors.red,
-              ),
+              SnackBar(content: Text('Stock insuffisant pour ${produit['nom']}'), backgroundColor: AppColors.error),
             );
             return;
           }
-
           setState(() {
             final existing = _produitsSelectionnes.firstWhere(
               (p) => p['id'] == produit['id'],
               orElse: () => {},
             );
-
             if (existing.isNotEmpty) {
               if (existing['quantite'] + 1 > produit['stock']) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Stock insuffisant pour ${produit['nom']}'),
-                    backgroundColor: Colors.red,
-                  ),
+                  SnackBar(content: Text('Stock insuffisant pour ${produit['nom']}'), backgroundColor: AppColors.error),
                 );
                 return;
               }
@@ -150,7 +133,6 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
     setState(() {
       final produit = _produitsSelectionnes[index];
       int nouvelleQuantite = produit['quantite'] + delta;
-
       if (nouvelleQuantite <= 0) {
         _produitsSelectionnes.removeAt(index);
       } else {
@@ -171,26 +153,17 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
   Future<void> _enregistrerCommande() async {
     if (_selectedClientId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner un client'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Veuillez sélectionner un client'), backgroundColor: AppColors.warning),
       );
       return;
     }
-
     if (_produitsSelectionnes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ajoutez au moins un produit'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Ajoutez au moins un produit'), backgroundColor: AppColors.warning),
       );
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
       final numero = _genererNumeroCommande();
       final commandeData = {
@@ -203,44 +176,27 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
         'clientTel': _selectedClientTel,
         'statut': 'enAttente',
         'montantTotal': _getTotalGeneral(),
-        'produits': _produitsSelectionnes
-            .map(
-              (p) => {
-                'produitId': p['id'],
-                'nom': p['nom'],
-                'quantite': p['quantite'],
-                'prixUnitaire': p['prix'],
-                'total': p['total'],
-              },
-            )
-            .toList(),
-        'historiqueStatuts': [
-          {
-            'statut': 'enAttente',
-            'date': Timestamp.now().toDate().toIso8601String(),
-            'note': 'Commande créée',
-          },
-        ],
+        'produits': _produitsSelectionnes.map((p) => {
+          'produitId': p['id'],
+          'nom': p['nom'],
+          'quantite': p['quantite'],
+          'prixUnitaire': p['prix'],
+          'total': p['total'],
+        }).toList(),
+        'historiqueStatuts': [{'statut': 'enAttente', 'date': Timestamp.now().toDate().toIso8601String(), 'note': 'Commande créée'}],
         'createdAt': Timestamp.now(),
       };
-
       await _firestore.collection('commandes').add(commandeData);
-
-      // 🔥 DÉDUIRE LE STOCK 🔥
       await _deduireStock();
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Commande créée avec succès !'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Commande créée avec succès !'), backgroundColor: AppColors.success),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -252,34 +208,24 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
     final year = now.year.toString().substring(2);
     final month = now.month.toString().padLeft(2, '0');
     final day = now.day.toString().padLeft(2, '0');
-    final random = (now.millisecondsSinceEpoch % 10000).toString().padLeft(
-      4,
-      '0',
-    );
+    final random = (now.millisecondsSinceEpoch % 10000).toString().padLeft(4, '0');
     return 'CMD-$year$month$day-$random';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Nouvelle commande'),
-        backgroundColor: const Color(0xFF2E7D32),
+        title: const Text('Nouvelle commande', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.primaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
             ),
         ],
       ),
@@ -291,25 +237,17 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section Client
                     _buildClientSection(),
                     const SizedBox(height: 24),
-
-                    // Section Produits
                     _buildProduitsSection(),
                     const SizedBox(height: 24),
-
-                    // Section Total
                     _buildTotalSection(),
                     const SizedBox(height: 80),
                   ],
                 ),
               ),
             ),
-
-            // Bouton Enregistrer
             _buildBottomButton(),
           ],
         ),
@@ -319,46 +257,16 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
 
   Widget _buildClientSection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Container(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Color(0xFF2E7D32),
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Informations client',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
+            decoration: BoxDecoration(color: AppColors.primaryPurple.withOpacity(0.05), borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+            child: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.primaryPurple.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.person, color: AppColors.primaryPurple, size: 20)), const SizedBox(width: 12), const Text('Informations client', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
           ),
           const Divider(height: 1),
-
           if (_selectedClientId == null)
             Padding(
               padding: const EdgeInsets.all(20),
@@ -366,25 +274,8 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
                 onTap: _selectionnerClient,
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_circle_outline,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Sélectionner un client',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
+                  decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.divider)),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_circle_outline, color: AppColors.textSecondary), const SizedBox(width: 8), Text('Sélectionner un client', style: TextStyle(color: AppColors.textSecondary))]),
                 ),
               ),
             )
@@ -393,68 +284,23 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2E7D32).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.person_outline,
-                      color: Color(0xFF2E7D32),
-                      size: 24,
-                    ),
-                  ),
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.primaryPurple.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.person_outline, color: AppColors.primaryPurple, size: 24)),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '$_selectedClientPrenom $_selectedClientNom',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Text('$_selectedClientPrenom $_selectedClientNom', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 4),
-                        Text(
-                          _selectedClientTel,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 13,
-                          ),
-                        ),
-                        // ✅ Afficher l'adresse si disponible (ICI, dans la partie else)
+                        Text(_selectedClientTel, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                         if (_selectedClientAdresse.isNotEmpty) ...[
                           const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 12,
-                                color: Colors.grey.shade500,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  _selectedClientAdresse,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          Row(children: [Icon(Icons.location_on, size: 12, color: AppColors.textHint), const SizedBox(width: 4), Expanded(child: Text(_selectedClientAdresse, style: TextStyle(color: AppColors.textHint, fontSize: 12)))]),
                         ],
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Color(0xFF2E7D32)),
-                    onPressed: _selectionnerClient,
-                  ),
+                  IconButton(icon: const Icon(Icons.edit, color: AppColors.primaryPurple), onPressed: _selectionnerClient),
                 ],
               ),
             ),
@@ -465,86 +311,32 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
 
   Widget _buildProduitsSection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Container(
             padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: AppColors.secondaryYellow.withOpacity(0.05), borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9800).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.shopping_cart,
-                        color: Color(0xFFFF9800),
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Produits',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                TextButton.icon(
-                  onPressed: _ajouterProduit,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Ajouter'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF2E7D32),
-                    backgroundColor: const Color(0xFF2E7D32).withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
+                Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.secondaryYellow.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.shopping_cart, color: AppColors.secondaryYellow, size: 20)), const SizedBox(width: 12), const Text('Produits', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+                TextButton.icon(onPressed: _ajouterProduit, icon: const Icon(Icons.add, size: 18), label: const Text('Ajouter'), style: TextButton.styleFrom(foregroundColor: AppColors.primaryPurple, backgroundColor: AppColors.primaryPurple.withOpacity(0.1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)))),
               ],
             ),
           ),
           const Divider(height: 1),
-
           if (_produitsSelectionnes.isEmpty)
             Padding(
               padding: const EdgeInsets.all(40),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 60,
-                    color: Colors.grey.shade300,
-                  ),
+                  Icon(Icons.shopping_bag_outlined, size: 60, color: AppColors.textHint),
                   const SizedBox(height: 12),
-                  Text(
-                    'Aucun produit ajouté',
-                    style: TextStyle(color: Colors.grey.shade500),
-                  ),
+                  Text('Aucun produit ajouté', style: TextStyle(color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _ajouterProduit,
-                    child: const Text('Ajouter un produit'),
-                  ),
+                  TextButton(onPressed: _ajouterProduit, child: const Text('Ajouter un produit')),
                 ],
               ),
             )
@@ -560,9 +352,7 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
                   produit: produit,
                   onIncrement: () => _modifierQuantite(index, 1),
                   onDecrement: () => _modifierQuantite(index, -1),
-                  onDelete: () {
-                    setState(() => _produitsSelectionnes.removeAt(index));
-                  },
+                  onDelete: () => setState(() => _produitsSelectionnes.removeAt(index)),
                 );
               },
             ),
@@ -573,38 +363,14 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
 
   Widget _buildTotalSection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 2))]),
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total commande',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  '${_getTotalGeneral().toStringAsFixed(0)} FCFA',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
-              ],
-            ),
+            const Text('Total commande', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text('${_getTotalGeneral().toStringAsFixed(0)} FCFA', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryPurple)),
           ],
         ),
       ),
@@ -614,38 +380,17 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
   Widget _buildBottomButton() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))]),
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
             onPressed: _isLoading ? null : _enregistrerCommande,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondaryYellow, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
             child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    'Enregistrer la commande',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPurple))
+                : const Text('Enregistrer la commande', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryPurple)),
           ),
         ),
       ),
@@ -653,19 +398,12 @@ class _NouvelleCommandePageState extends State<NouvelleCommandePage> {
   }
 }
 
-// Ligne produit dans la commande
 class _ProduitLigne extends StatelessWidget {
   final Map<String, dynamic> produit;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final VoidCallback onDelete;
-
-  const _ProduitLigne({
-    required this.produit,
-    required this.onIncrement,
-    required this.onDecrement,
-    required this.onDelete,
-  });
+  const _ProduitLigne({required this.produit, required this.onIncrement, required this.onDecrement, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -677,73 +415,34 @@ class _ProduitLigne extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  produit['nom'],
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                Text(produit['nom'], style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text(
-                  '${produit['prix'].toStringAsFixed(0)} FCFA',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
+                Text('${produit['prix'].toStringAsFixed(0)} FCFA', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
-                IconButton(
-                  onPressed: onDecrement,
-                  icon: const Icon(Icons.remove, size: 18),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                ),
-                Container(
-                  width: 40,
-                  alignment: Alignment.center,
-                  child: Text(
-                    produit['quantite'].toString(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                IconButton(
-                  onPressed: onIncrement,
-                  icon: const Icon(Icons.add, size: 18),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                ),
+                IconButton(onPressed: onDecrement, icon: const Icon(Icons.remove, size: 18), constraints: const BoxConstraints(), padding: EdgeInsets.zero),
+                Container(width: 40, alignment: Alignment.center, child: Text(produit['quantite'].toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
+                IconButton(onPressed: onIncrement, icon: const Icon(Icons.add, size: 18), constraints: const BoxConstraints(), padding: EdgeInsets.zero),
               ],
             ),
           ),
           const SizedBox(width: 16),
-          SizedBox(
-            width: 80,
-            child: Text(
-              '${produit['total'].toStringAsFixed(0)} FCFA',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.right,
-            ),
-          ),
-          IconButton(
-            onPressed: onDelete,
-            icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
-            constraints: const BoxConstraints(),
-          ),
+          SizedBox(width: 80, child: Text('${produit['total'].toStringAsFixed(0)} FCFA', style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
+          IconButton(onPressed: onDelete, icon: Icon(Icons.delete_outline, color: AppColors.error), constraints: const BoxConstraints()),
         ],
       ),
     );
   }
 }
 
-// Dialog de recherche client (simplifié)
 class ClientSearchDialog extends StatefulWidget {
   const ClientSearchDialog({super.key});
-
   @override
   State<ClientSearchDialog> createState() => _ClientSearchDialogState();
 }
@@ -760,31 +459,16 @@ class _ClientSearchDialogState extends State<ClientSearchDialog> {
   }
 
   Future<void> _loadClients() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('clients')
-        .get();
+    final snapshot = await FirebaseFirestore.instance.collection('clients').get();
     setState(() {
-      _clients = snapshot.docs.map((doc) {
-        return {
-          'id': doc.id,
-          'nom': doc['nom'],
-          'prenom': doc['prenom'],
-          'telephone': doc['telephone'],
-          'email': doc['email'] ?? '',
-          'adresse': doc['adresse'] ?? '',
-        };
-      }).toList();
+      _clients = snapshot.docs.map((doc) => {'id': doc.id, 'nom': doc['nom'], 'prenom': doc['prenom'], 'telephone': doc['telephone'], 'email': doc['email'] ?? '', 'adresse': doc['adresse'] ?? ''}).toList();
       _clientsFiltres = _clients;
     });
   }
 
   void _filterClients(String query) {
     setState(() {
-      _clientsFiltres = _clients.where((client) {
-        final nomComplet = '${client['prenom']} ${client['nom']}'.toLowerCase();
-        return nomComplet.contains(query.toLowerCase()) ||
-            (client['telephone']?.contains(query) ?? false);
-      }).toList();
+      _clientsFiltres = _clients.where((client) => '${client['prenom']} ${client['nom']}'.toLowerCase().contains(query.toLowerCase()) || (client['telephone']?.contains(query) ?? false)).toList();
     });
   }
 
@@ -797,21 +481,12 @@ class _ClientSearchDialogState extends State<ClientSearchDialog> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text(
-              'Sélectionner un client',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            const Text('Sélectionner un client', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             TextField(
               controller: _searchController,
               onChanged: _filterClients,
-              decoration: InputDecoration(
-                hintText: 'Rechercher...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              decoration: InputDecoration(hintText: 'Rechercher...', prefixIcon: const Icon(Icons.search), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -820,23 +495,11 @@ class _ClientSearchDialogState extends State<ClientSearchDialog> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 48,
-                            color: Colors.grey.shade300,
-                          ),
+                          Icon(Icons.people_outline, size: 48, color: AppColors.textHint),
                           const SizedBox(height: 8),
-                          Text(
-                            'Aucun client trouvé',
-                            style: TextStyle(color: Colors.grey.shade500),
-                          ),
+                          Text('Aucun client trouvé', style: TextStyle(color: AppColors.textSecondary)),
                           const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: () {
-                              // Naviguer vers ajout client
-                            },
-                            child: const Text('+ Ajouter un client'),
-                          ),
+                          TextButton(onPressed: () {}, child: const Text('+ Ajouter un client')),
                         ],
                       ),
                     )
@@ -845,10 +508,7 @@ class _ClientSearchDialogState extends State<ClientSearchDialog> {
                       itemBuilder: (context, index) {
                         final client = _clientsFiltres[index];
                         return ListTile(
-                          leading: const CircleAvatar(
-                            backgroundColor: Color(0xFF2E7D32),
-                            child: Icon(Icons.person, color: Colors.white),
-                          ),
+                          leading: CircleAvatar(backgroundColor: AppColors.primaryPurple, child: const Icon(Icons.person, color: Colors.white)),
                           title: Text('${client['prenom']} ${client['nom']}'),
                           subtitle: Text(client['telephone'] ?? ''),
                           onTap: () => Navigator.pop(context, client),
@@ -863,58 +523,29 @@ class _ClientSearchDialogState extends State<ClientSearchDialog> {
   }
 }
 
-// Sheet de sélection produit
 class ProduitSelectionSheet extends StatelessWidget {
   final List<Map<String, dynamic>> produits;
   final Function(Map<String, dynamic>) onProduitSelected;
-
-  const ProduitSelectionSheet({
-    super.key,
-    required this.produits,
-    required this.onProduitSelected,
-  });
+  const ProduitSelectionSheet({super.key, required this.produits, required this.onProduitSelected});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Ajouter un produit',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
+          Container(margin: const EdgeInsets.symmetric(vertical: 12), width: 40, height: 4, decoration: BoxDecoration(color: AppColors.textHint, borderRadius: BorderRadius.circular(2))),
+          const Padding(padding: EdgeInsets.all(16), child: Text('Ajouter un produit', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           Expanded(
             child: produits.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.inventory,
-                          size: 48,
-                          color: Colors.grey.shade300,
-                        ),
+                        Icon(Icons.inventory, size: 48, color: AppColors.textHint),
                         const SizedBox(height: 8),
-                        Text(
-                          'Aucun produit disponible',
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
+                        Text('Aucun produit disponible', style: TextStyle(color: AppColors.textSecondary)),
                       ],
                     ),
                   )
@@ -923,25 +554,10 @@ class ProduitSelectionSheet extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final produit = produits[index];
                       return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF9800).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.shopping_bag,
-                            color: Color(0xFFFF9800),
-                          ),
-                        ),
+                        leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.secondaryYellow.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.shopping_bag, color: AppColors.secondaryYellow)),
                         title: Text(produit['nom']),
-                        subtitle: Text(
-                          '${produit['prix'].toStringAsFixed(0)} FCFA',
-                        ),
-                        trailing: const Icon(
-                          Icons.add_circle,
-                          color: Color(0xFF2E7D32),
-                        ),
+                        subtitle: Text('${produit['prix'].toStringAsFixed(0)} FCFA'),
+                        trailing: const Icon(Icons.add_circle, color: AppColors.primaryPurple),
                         onTap: () {
                           Navigator.pop(context);
                           onProduitSelected(produit);
